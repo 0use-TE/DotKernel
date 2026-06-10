@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:twin="using:DotKernel.AvaExample.Twin"
+             xmlns:vm="using:DotKernel.AvaExample.ViewModels"
+             x:Class="DotKernel.AvaExample.Views.TwinPanelView"
+             x:DataType="vm:MainViewModel">
+
+  <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="12">
+    <StackPanel Grid.Row="0" Spacing="4">
+      <TextBlock Text="产线数字孪生" FontSize="17" FontWeight="SemiBold" Foreground="#F3F6FC"/>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Border Classes="status-chip">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path Data="{StaticResource IconAgv}" Width="14" Height="14" Stretch="Uniform"
+                  Stroke="#7DD3FC" StrokeThickness="1.3"/>
+            <TextBlock Text="{Binding Twin.AgvZoneName}" FontSize="12" Foreground="#7DD3FC" FontWeight="SemiBold"/>
+          </StackPanel>
+        </Border>
+        <Border Classes="status-chip">
+          <TextBlock Text="{Binding PendingAction}" FontSize="11" Foreground="#FCD34D"/>
+        </Border>
+      </StackPanel>
+    </StackPanel>
+
+    <TextBlock Grid.Row="1" Text="工具执行后孪生状态实时同步" Opacity="0.55" FontSize="11"/>
+
+    <ScrollViewer Grid.Row="2">
+      <ItemsControl ItemsSource="{Binding Twin.Zones}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="twin:ZoneState">
+            <Border Classes="zone-card" Margin="0,0,0,10">
+              <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="#E2E8F0"/>
+                  <Border Grid.Column="1" Classes="agv-badge" IsVisible="{Binding IsAgvHere}">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <Path Data="{StaticResource IconAgv}" Width="12" Height="12" Stretch="Uniform"
+                            Stroke="#C4B5FD" StrokeThickness="1.3"/>
+                      <TextBlock Text="AGV" FontSize="10" Foreground="#C4B5FD" FontWeight="SemiBold"/>
+                    </StackPanel>
+                  </Border>
+                </Grid>
+
+                <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                  <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                    <Border Classes="metric-icon" Background="#422006" IsVisible="{Binding LightOn}">
+                      <Path Data="{StaticResource IconLight}" Width="12" Height="12" Stretch="Uniform" Fill="#FCD34D"/>
+                    </Border>
+                    <Border Classes="metric-icon" Background="#1E293B" IsVisible="{Binding !LightOn}">
+                      <Path Data="{StaticResource IconLight}" Width="12" Height="12" Stretch="Uniform" Fill="#64748B"/>
+                    </Border>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Path Data="{StaticResource IconConveyor}" Width="12" Height="12" Stretch="Uniform"
+                            Stroke="#38BDF8" StrokeThickness="1.2"/>
+                      <TextBlock Text="{Binding ConveyorStatus}" FontSize="11" Opacity="0.85"/>
+                    </StackPanel>
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding ConveyorSpeed}" Height="6"
+                                 Foreground="#38BDF8" Background="#1E293B"/>
+                  </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Path Data="{StaticResource IconRobot}" Width="12" Height="12" Stretch="Uniform"
+                          Stroke="#A5B4FC" StrokeThickness="1.1"/>
+                    <TextBlock Text="{Binding RobotStatus}" FontSize="12" Foreground="#A5B4FC"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                    <Path Data="{StaticResource IconInventory}" Width="12" Height="12" Stretch="Uniform"
+                          Stroke="#86EFAC" StrokeThickness="1.1"/>
+                    <TextBlock Text="{Binding Inventory}" FontSize="12" Foreground="#86EFAC" FontWeight="SemiBold"/>
+                  </StackPanel>
+                </Grid>
+
+                <Border Grid.Row="3" Classes="zone-alert" Padding="8"
+                        IsVisible="{Binding AlertMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="{Binding AlertMessage}" FontSize="11" Foreground="#FDE68A" TextWrapping="Wrap"/>
+                </Border>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <Border Grid.Row="3" Classes="activity-feed" Padding="10" MaxHeight="220">
+      <Grid RowDefinitions="Auto,*">
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+          <Path Data="{StaticResource IconTool}" Width="12" Height="12" Stretch="Uniform"
+                Stroke="#93C5FD" StrokeThickness="1.3"/>
+          <TextBlock Text="调用历史" FontSize="12" FontWeight="SemiBold" Opacity="0.9"/>
+        </StackPanel>
+        <ScrollViewer Grid.Row="1">
+          <ItemsControl ItemsSource="{Binding ToolCallHistory}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ToolCallHistoryEntry">
+                <Border Classes="tool-card" Margin="0,0,0,8">
+                  <StackPanel Spacing="4">
+                    <Grid ColumnDefinitions="52,*,Auto">
+                      <TextBlock Grid.Column="0" Text="{Binding TimeLabel}" FontSize="10" Opacity="0.5"/>
+                      <TextBlock Grid.Column="1" Text="{Binding ToolName}" FontWeight="SemiBold"
+                                 Foreground="#A5B4FC" TextWrapping="Wrap"/>
+                      <TextBlock Grid.Column="2" Text="{Binding Status}" FontSize="10" Foreground="#86EFAC"/>
+                    </Grid>
+                    <TextBlock Text="{Binding ArgumentsJson}" FontFamily="Consolas,Courier New,monospace"
+                               FontSize="10" Opacity="0.8" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Result}" FontSize="10" Foreground="#CBD5E1"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding Result, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

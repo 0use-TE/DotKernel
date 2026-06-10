@@ -1,0 +1,76 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mv="using:MarkView.Avalonia">
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="MaxWidth" Value="500"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown TextBlock">
+    <Setter Property="Foreground" Value="#E8EDF7"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown TextBlock.markdown-h1">
+    <Setter Property="FontSize" Value="20"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="Foreground" Value="#F3F6FC"/>
+    <Setter Property="Margin" Value="0,0,0,8"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown TextBlock.markdown-h2">
+    <Setter Property="FontSize" Value="17"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="#E2E8F0"/>
+    <Setter Property="Margin" Value="0,8,0,6"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown TextBlock.markdown-h3">
+    <Setter Property="FontSize" Value="15"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="#CBD5E1"/>
+    <Setter Property="Margin" Value="0,6,0,4"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown Border.markdown-code-block">
+    <Setter Property="Background" Value="#0F141D"/>
+    <Setter Property="BorderBrush" Value="#334155"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="10"/>
+    <Setter Property="Margin" Value="0,6"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown Border.markdown-code-inline">
+    <Setter Property="Background" Value="#1E293B"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="Padding" Value="4,2"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown Border.markdown-blockquote">
+    <Setter Property="Background" Value="#1A2233"/>
+    <Setter Property="BorderBrush" Value="#3B6EF5"/>
+    <Setter Property="BorderThickness" Value="3,0,0,0"/>
+    <Setter Property="Padding" Value="10,6"/>
+    <Setter Property="Margin" Value="0,6"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown Border.markdown-table">
+    <Setter Property="Margin" Value="0,8"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown Border.markdown-table-header">
+    <Setter Property="Background" Value="#1E293B"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown Border.markdown-table-cell">
+    <Setter Property="Background" Value="#151B26"/>
+    <Setter Property="BorderBrush" Value="#2A3142"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown HyperlinkButton.markdown-link">
+    <Setter Property="Foreground" Value="#7DD3FC"/>
+  </Style>
+
+</Styles>

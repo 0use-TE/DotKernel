@@ -1,0 +1,35 @@
+.avalonia-splash {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    pointer-events: none;
+}
+
+@media (prefers-color-scheme: light) {
+    .avalonia-splash {
+        background: #f4f6fb;
+        color: #1b2a4e;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .avalonia-splash {
+        background: #121826;
+        color: #e8edf7;
+    }
+}
+
+.avalonia-splash h2 {
+    font-weight: 500;
+    font-size: 1.25rem;
+}
+
+.avalonia-splash.splash-close {
+    transition: opacity 200ms, display 200ms;
+    display: none;
+    opacity: 0;
+}

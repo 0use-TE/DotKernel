@@ -1,0 +1,35 @@
+## Build
+bin/
+obj/
+out/
+artifacts/
+
+## IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Secrets — never commit keys
+**/secrets.json
+appsettings.*.local.json
+.env
+.env.*
+
+## Test / coverage
+TestResults/
+*.trx
+coverage/
+
+## Publish
+publish/
+
+## DocFX
+api/
+_site/
+
+## OS
+Thumbs.db
+.DS_Store

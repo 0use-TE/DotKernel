@@ -1,0 +1,12 @@
+- name: Introduction
+  href: introduction.md
+- name: Quick Start
+  href: getting-started.md
+- name: Plugins & Prompts
+  href: plugins-and-prompts.md
+- name: Filters
+  href: filters.md
+- name: Avalonia demo
+  href: avalonia-demo.md
+- name: Native AOT
+  href: aot-compatibility.md

@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Project Path="_AvaRef.Android/_AvaRef.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="_AvaRef.Browser/_AvaRef.Browser.csproj" />
+  <Project Path="_AvaRef.Desktop/_AvaRef.Desktop.csproj" />
+  <Project Path="_AvaRef.iOS/_AvaRef.iOS.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="_AvaRef/_AvaRef.csproj" />
+</Solution>

@@ -1,0 +1,16 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Geometry x:Key="IconLight">M8,1.5 C5.5,1.5 3.5,3.5 3.5,6 C3.5,9 8,14.5 8,14.5 C8,14.5 12.5,9 12.5,6 C12.5,3.5 10.5,1.5 8,1.5 Z M8,8 C7.1,8 6.3,7.2 6.3,6.3 C6.3,5.4 7.1,4.6 8,4.6 C8.9,4.6 9.7,5.4 9.7,6.3 C9.7,7.2 8.9,8 8,8 Z</Geometry>
+  <Geometry x:Key="IconConveyor">M1,7 H15 M1,9 H15 M3,5 H13 M3,11 H13</Geometry>
+  <Geometry x:Key="IconRobot">M5,2 H11 V5 H5 Z M3,6 H13 V12 H3 Z M5,13 H7 V15 H5 Z M9,13 H11 V15 H9 Z</Geometry>
+  <Geometry x:Key="IconInventory">M2,4 H14 L13,13 H3 Z M6,2 H10 V4 H6 Z</Geometry>
+  <Geometry x:Key="IconAgv">M2,9 H12 V11 H2 Z M3,6 H6 V9 H3 Z M8,6 H11 V9 H8 Z M4,11 H5 V13 H4 Z M9,11 H10 V13 H9 Z</Geometry>
+  <Geometry x:Key="IconTool">M11.5,2.5 L13.5,4.5 L9,9 L7,9 L7,7 Z M6,10 C4.9,10 4,10.9 4,12 C4,13.1 4.9,14 6,14 C7.1,14 8,13.1 8,12 C8,10.9 7.1,10 6,10 Z</Geometry>
+  <Geometry x:Key="IconCheck">M2,8 L6,12 L14,4</Geometry>
+  <Geometry x:Key="IconCross">M4,4 L12,12 M12,4 L4,12</Geometry>
+  <Geometry x:Key="IconSend">M2,8 L14,2 L10,14 L8,9 Z</Geometry>
+  <Geometry x:Key="IconReset">M8,2 A6,6 0 1,1 3,8 M3,5 V8 H6</Geometry>
+  <Geometry x:Key="IconPulse">M2,8 H4 V12 H2 Z M6,6 H8 V12 H6 Z M10,4 H12 V12 H10 Z</Geometry>
+
+</ResourceDictionary>

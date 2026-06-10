@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples/DotKernel.Example/DotKernel.Example.csproj" />
+    <Project Path="examples/DotKernel.AvaExample/DotKernel.AvaExample.csproj" />
+    <Project Path="examples/DotKernel.AvaExample.Desktop/DotKernel.AvaExample.Desktop.csproj" />
+    <Project Path="examples/DotKernel.AvaExample.Browser/DotKernel.AvaExample.Browser.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/DotKernel.Generators/DotKernel.Generators.csproj" />
+    <Project Path="src/DotKernel/DotKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DotKernel.Tests/DotKernel.Tests.csproj" />
+  </Folder>
+</Solution>

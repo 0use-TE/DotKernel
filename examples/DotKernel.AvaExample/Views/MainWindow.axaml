@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:DotKernel.AvaExample.Views"
+        xmlns:vm="using:DotKernel.AvaExample.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DesignWidth="960" d:DesignHeight="640"
+        x:Class="DotKernel.AvaExample.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="DotKernel"
+        Width="1024" Height="700"
+        MinWidth="760" MinHeight="520"
+        Background="#0E1117">
+
+  <views:MainView DataContext="{Binding}"/>
+</Window>

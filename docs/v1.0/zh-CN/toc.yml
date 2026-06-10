@@ -1,0 +1,12 @@
+- name: 简介
+  href: introduction.md
+- name: 快速开始
+  href: getting-started.md
+- name: 插件与提示词
+  href: plugins-and-prompts.md
+- name: 过滤器
+  href: filters.md
+- name: Avalonia 示例
+  href: avalonia-demo.md
+- name: Native AOT
+  href: aot-compatibility.md

@@ -73,4 +73,13 @@
     <Setter Property="Foreground" Value="#7DD3FC"/>
   </Style>
 
+  <Style Selector="mv|MarkdownViewer.chat-markdown StackPanel.markdown-list-item">
+    <Setter Property="Margin" Value="0,2"/>
+  </Style>
+
+  <Style Selector="mv|MarkdownViewer.chat-markdown TextBlock.markdown-list-marker">
+    <Setter Property="Foreground" Value="#64748B"/>
+    <Setter Property="MinWidth" Value="18"/>
+  </Style>
+
 </Styles>

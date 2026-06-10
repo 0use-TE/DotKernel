@@ -10,7 +10,7 @@ public partial class ChatLineViewModel : ChatItemViewModel
         _content = content;
         IsUser = isUser;
         IsError = isError;
-        UseMarkdown = !isUser && !isError;
+        UseMarkdown = false;
     }
 
     public string Role { get; }
@@ -19,10 +19,19 @@ public partial class ChatLineViewModel : ChatItemViewModel
 
     public bool IsError { get; }
 
-    public bool UseMarkdown { get; }
+    [ObservableProperty]
+    private bool _useMarkdown;
 
     [ObservableProperty]
     private string _content;
 
     public void Append(string delta) => Content += delta;
+
+    public void FinishStreaming()
+    {
+        if (!IsUser && !IsError)
+        {
+            UseMarkdown = true;
+        }
+    }
 }

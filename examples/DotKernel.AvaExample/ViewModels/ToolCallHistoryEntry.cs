@@ -28,9 +28,14 @@ public partial class ToolCallHistoryEntry : ObservableObject
     [ObservableProperty]
     private string _status = "执行中";
 
+    public void MarkAwaitingConfirmation()
+    {
+        Status = "待确认";
+    }
+
     public void MarkCompleted(string? result)
     {
         Result = result;
-        Status = "完成";
+        Status = result?.Contains("拒绝", StringComparison.Ordinal) == true ? "已拒绝" : "完成";
     }
 }

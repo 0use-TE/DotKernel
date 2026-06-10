@@ -9,20 +9,26 @@ namespace DotKernel.AvaExample.Services;
 
 public static class KernelAppFactory
 {
-    public static (KernelHost Host, BuildingTwinState Twin, ToolCallHistoryFilter Filter, string Status) Create(
-        IConfiguration configuration)
+    public static (
+        KernelHost Host,
+        BuildingTwinState Twin,
+        ToolCallHistoryFilter HistoryFilter,
+        ToolCallConfirmationFilter ConfirmationFilter,
+        string Status) Create(IConfiguration configuration)
     {
         var twin = new BuildingTwinState();
         var plugin = new BuildingTwinPlugin(twin);
-        var filter = new ToolCallHistoryFilter();
+        var historyFilter = new ToolCallHistoryFilter();
+        var confirmationFilter = new ToolCallConfirmationFilter();
         var (client, status) = DeepSeekChatClientFactory.Create(configuration);
 
         var kernel = KernelBuilder.Create()
             .AddChatClient(client)
             .AddPlugin(plugin)
-            .AddFilter(filter)
+            .AddFilter(historyFilter)
+            .AddFilter(confirmationFilter)
             .Build();
 
-        return (new KernelHost(kernel), twin, filter, status);
+        return (new KernelHost(kernel), twin, historyFilter, confirmationFilter, status);
     }
 }

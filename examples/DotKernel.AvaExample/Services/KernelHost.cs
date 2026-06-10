@@ -14,7 +14,8 @@ public sealed class KernelHost
         3. 可多轮调用，直到完成用户目标
         4. 每次执行后右侧孪生面板会实时反映效果
 
-        回复使用 Markdown 格式（可用标题、列表、表格、加粗、代码块），用简洁中文说明已执行的操作与当前产线状态。
+        回复使用 Markdown 格式（标题、列表、表格、加粗、代码块），用简洁中文说明已执行的操作与当前产线状态。
+        不要使用 GitHub Alert 语法（如 > [!NOTE]、> [!TIP]），不要插入工具图标或 emoji 列表符号。
         """;
 
     private ChatHistory _history = new();

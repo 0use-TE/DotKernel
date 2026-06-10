@@ -8,8 +8,8 @@ public static class AppBootstrap
     public static MainViewModel CreateMainViewModel(bool useUserSecrets)
     {
         var configuration = BuildConfiguration(useUserSecrets);
-        var (host, twin, filter, status) = KernelAppFactory.Create(configuration);
-        return new MainViewModel(host, twin, filter, status);
+        var (host, twin, historyFilter, confirmationFilter, status) = KernelAppFactory.Create(configuration);
+        return new MainViewModel(host, twin, historyFilter, confirmationFilter, status);
     }
 
     public static IConfiguration BuildConfiguration(bool useUserSecrets)

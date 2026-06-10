@@ -42,7 +42,6 @@ public partial class App : Application
     {
         MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
             .UseSupportedExtensions()
-            .UseAlertBlocks()
             .Build();
 
         MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((_, e) =>

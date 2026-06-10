@@ -77,7 +77,7 @@ public sealed class ToolCallConfirmationFilter : IKernelFilter
 
         if (!approved)
         {
-            context.CustomResult = "用户已拒绝执行此工具。";
+            context.CustomResult = "User denied this tool call.";
             return new ToolCallFilterResult
             {
                 Action = FilterAction.Skip,

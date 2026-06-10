@@ -8,7 +8,7 @@ builder.Filters.Add<ToolCallHistoryFilter>();
 
 Implement `IKernelFilter` or use the built-in pipeline hooks to:
 
-- Log or audit tool calls (see Avalonia demo **调用历史** panel)
+- Log or audit tool calls (see Avalonia demo **Call history** panel)
 - Auto-approve tools in trusted demos
 - Add rate limits or policy checks
 

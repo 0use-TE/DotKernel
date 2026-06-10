@@ -50,7 +50,7 @@ public partial class MainViewModel : ViewModelBase
                     entry.MarkAwaitingConfirmation();
                 }
 
-                PendingAction = AutoApproveTools ? context.FullName : $"待确认 {context.FullName}";
+                PendingAction = AutoApproveTools ? context.FullName : $"Awaiting {context.FullName}";
             });
         };
 
@@ -61,7 +61,7 @@ public partial class MainViewModel : ViewModelBase
                 PendingToolName = context.FullName;
                 PendingToolArguments = context.RawArgumentsJson ?? "{}";
                 HasPendingConfirmation = true;
-                PendingAction = $"待确认 {context.FullName}";
+                PendingAction = $"Awaiting {context.FullName}";
             });
         };
     }
@@ -74,7 +74,7 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    private string _inputText = "请巡检产线并逐步优化：先查看状态，开启装配区照明和传送带，调度 AGV 到装配区，启动机器人装配，并更新库存";
+    private string _inputText = "Inspect the line and optimize step by step: snapshot, lights and conveyor in assembly, move AGV from storage, start robot assembly, update inventory.";
 
     [ObservableProperty]
     private string _connectionStatus = "";
@@ -87,7 +87,7 @@ public partial class MainViewModel : ViewModelBase
     private bool _isStreaming;
 
     [ObservableProperty]
-    private string _pendingAction = "待命";
+    private string _pendingAction = "Idle";
 
     [ObservableProperty]
     private bool _autoApproveTools = true;
@@ -122,7 +122,7 @@ public partial class MainViewModel : ViewModelBase
     {
         _confirmationFilter.DenyPending();
         HasPendingConfirmation = false;
-        PendingAction = "已拒绝";
+        PendingAction = "Denied";
     }
 
     [RelayCommand(CanExecute = nameof(CanSend))]
@@ -136,11 +136,11 @@ public partial class MainViewModel : ViewModelBase
         var prompt = InputText.Trim();
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
-            Messages.Add(new ChatLineViewModel("你", prompt, isUser: true));
+            Messages.Add(new ChatLineViewModel("You", prompt, isUser: true));
             InputText = string.Empty;
             IsBusy = true;
             IsStreaming = true;
-            PendingAction = "思考中…";
+            PendingAction = "Thinking…";
         });
 
         ChatLineViewModel? assistantLine = null;
@@ -154,7 +154,7 @@ public partial class MainViewModel : ViewModelBase
                     case KernelStreamingUpdateKind.TextDelta:
                         await Dispatcher.UIThread.InvokeAsync(() =>
                         {
-                            assistantLine ??= new ChatLineViewModel("助手", string.Empty);
+                            assistantLine ??= new ChatLineViewModel("Assistant", string.Empty);
                             if (!Messages.Contains(assistantLine))
                             {
                                 Messages.Add(assistantLine);
@@ -174,7 +174,7 @@ public partial class MainViewModel : ViewModelBase
                                 _pendingHistory.Remove(update.ToolCallId);
                             }
 
-                            PendingAction = $"完成 {update.ToolName}";
+                            PendingAction = $"Done {update.ToolName}";
                         });
                         break;
 
@@ -183,12 +183,12 @@ public partial class MainViewModel : ViewModelBase
                         {
                             if (assistantLine is null && !string.IsNullOrEmpty(update.FinalText))
                             {
-                                assistantLine = new ChatLineViewModel("助手", update.FinalText);
+                                assistantLine = new ChatLineViewModel("Assistant", update.FinalText);
                                 Messages.Add(assistantLine);
                             }
 
                             assistantLine?.FinishStreaming();
-                            PendingAction = "待命";
+                            PendingAction = "Idle";
                         });
                         break;
                 }
@@ -198,8 +198,8 @@ public partial class MainViewModel : ViewModelBase
         {
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Messages.Add(new ChatLineViewModel("错误", ex.Message, isError: true));
-                PendingAction = "异常";
+                Messages.Add(new ChatLineViewModel("Error", ex.Message, isError: true));
+                PendingAction = "Error";
             });
         }
         finally
@@ -225,6 +225,6 @@ public partial class MainViewModel : ViewModelBase
         _twin.Reset();
         _host.ResetConversation();
         HasPendingConfirmation = false;
-        PendingAction = "待命";
+        PendingAction = "Idle";
     }
 }

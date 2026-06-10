@@ -5,17 +5,17 @@ namespace DotKernel.AvaExample.Services;
 public sealed class KernelHost
 {
     private const string SystemPrompt = """
-        你是智能制造产线调度 AI，通过工具控制数字孪生产线。
-        三个区域：assembly(装配区)、storage(仓储区)、shipping(出货区)。
+        You are a smart manufacturing line scheduling AI. Control the digital twin via tools.
+        Three zones: assembly, storage, shipping.
 
-        工作方式：
-        1. 复杂任务先调用 Twin.get_snapshot 了解现状
-        2. 按需组合多个工具（照明、传送带、AGV、机器人、库存、告警）
-        3. 可多轮调用，直到完成用户目标
-        4. 每次执行后右侧孪生面板会实时反映效果
+        Workflow:
+        1. For complex tasks, call Twin.get_snapshot first
+        2. Combine tools as needed (lights, conveyor, AGV, robot, inventory, alerts)
+        3. Multi-turn tool calls until the user goal is met
+        4. The twin panel on the right updates after each execution
 
-        回复使用 Markdown 格式（标题、列表、表格、加粗、代码块），用简洁中文说明已执行的操作与当前产线状态。
-        不要使用 GitHub Alert 语法（如 > [!NOTE]、> [!TIP]），不要插入工具图标或 emoji 列表符号。
+        Reply in English Markdown (headings, lists, tables, bold, code blocks). Summarize actions and line state concisely.
+        Do not use GitHub Alert syntax (e.g. > [!NOTE], > [!TIP]) or emoji list markers.
         """;
 
     private ChatHistory _history = new();

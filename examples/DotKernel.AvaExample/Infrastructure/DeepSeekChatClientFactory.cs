@@ -16,13 +16,13 @@ internal static class DeepSeekChatClientFactory
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             return (new EchoChatClient(), OperatingSystem.IsBrowser()
-                ? "本地模拟（发布时注入 DeepSeek:ApiKey）"
-                : "本地模拟（未配置 DeepSeek:ApiKey）");
+                ? "Echo (set DeepSeek:ApiKey in CI)"
+                : "Echo (no DeepSeek:ApiKey)");
         }
 
         if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(modelId))
         {
-            throw new InvalidOperationException("DeepSeek:Endpoint 与 DeepSeek:ModelId 必须已配置。");
+            throw new InvalidOperationException("DeepSeek:Endpoint and DeepSeek:ModelId must be configured.");
         }
 
         var client = new OpenAIClient(

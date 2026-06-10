@@ -11,9 +11,9 @@ public partial class BuildingTwinState : ObservableObject
     {
         Zones =
         [
-            new ZoneState("assembly", "装配区", lightOn: false, conveyorSpeed: 0, inventory: 12),
-            new ZoneState("storage", "仓储区", lightOn: true, conveyorSpeed: 20, inventory: 48) { IsAgvHere = true },
-            new ZoneState("shipping", "出货区", lightOn: false, conveyorSpeed: 0, inventory: 6),
+            new ZoneState("assembly", "Assembly", lightOn: false, conveyorSpeed: 0, inventory: 12),
+            new ZoneState("storage", "Storage", lightOn: true, conveyorSpeed: 20, inventory: 48) { IsAgvHere = true },
+            new ZoneState("shipping", "Shipping", lightOn: false, conveyorSpeed: 0, inventory: 6),
         ];
     }
 
@@ -35,7 +35,7 @@ public partial class BuildingTwinState : ObservableObject
         var zone = Zones.FirstOrDefault(z => string.Equals(z.Id, zoneId, StringComparison.OrdinalIgnoreCase));
         if (zone is null)
         {
-            throw new ArgumentException($"未知区域 '{zoneId}'，可用: assembly, storage, shipping。");
+            throw new ArgumentException($"Unknown zone '{zoneId}'. Available: assembly, storage, shipping.");
         }
 
         return zone;
@@ -47,8 +47,8 @@ public partial class BuildingTwinState : ObservableObject
         {
             var z = GetZone(zoneId);
             z.LightOn = on;
-            RecordActivityCore("照明", $"{z.Name} {(on ? "开灯" : "关灯")}");
-            return $"{z.Name} 照明已{(on ? "开启" : "关闭")}。";
+            RecordActivityCore("Lighting", $"{z.Name} {(on ? "on" : "off")}");
+            return $"{z.Name} lighting {(on ? "enabled" : "disabled")}.";
         });
     }
 
@@ -59,8 +59,8 @@ public partial class BuildingTwinState : ObservableObject
             var z = GetZone(zoneId);
             z.ConveyorSpeed = Math.Clamp(speed, 0, 100);
             z.ConveyorRunning = running && z.ConveyorSpeed > 0;
-            RecordActivityCore("传送带", $"{z.Name} {(z.ConveyorRunning ? $"运行 {z.ConveyorSpeed}%" : "停止")}");
-            return $"{z.Name} 传送带 {(z.ConveyorRunning ? $"以 {z.ConveyorSpeed}% 运行" : "已停止")}。";
+            RecordActivityCore("Conveyor", $"{z.Name} {(z.ConveyorRunning ? $"running {z.ConveyorSpeed}%" : "stopped")}");
+            return $"{z.Name} conveyor {(z.ConveyorRunning ? $"running at {z.ConveyorSpeed}%" : "stopped")}.";
         });
     }
 
@@ -73,14 +73,14 @@ public partial class BuildingTwinState : ObservableObject
 
             if (!from.IsAgvHere)
             {
-                return $"AGV 不在 {from.Name}，当前位于 {GetZone(AgvZoneId).Name}。";
+                return $"AGV is not at {from.Name}; currently at {GetZone(AgvZoneId).Name}.";
             }
 
             from.IsAgvHere = false;
             to.IsAgvHere = true;
             AgvZoneId = to.Id;
             RecordActivityCore("AGV", $"{from.Name} → {to.Name}");
-            return $"AGV 已从 {from.Name} 调度至 {to.Name}。";
+            return $"AGV dispatched from {from.Name} to {to.Name}.";
         });
     }
 
@@ -91,13 +91,13 @@ public partial class BuildingTwinState : ObservableObject
             var normalized = task.ToLowerInvariant();
             if (normalized is not ("idle" or "assemble" or "inspect" or "pack"))
             {
-                return "任务必须是 idle、assemble、inspect 或 pack。";
+                return "Task must be idle, assemble, inspect, or pack.";
             }
 
             var z = GetZone(zoneId);
             z.RobotTask = normalized;
-            RecordActivityCore("机器人", $"{z.Name} → {z.RobotStatus}");
-            return $"{z.Name} 机器人当前状态：{z.RobotStatus}。";
+            RecordActivityCore("Robot", $"{z.Name} → {z.RobotStatus}");
+            return $"{z.Name} robot status: {z.RobotStatus}.";
         });
     }
 
@@ -107,8 +107,8 @@ public partial class BuildingTwinState : ObservableObject
         {
             var z = GetZone(zoneId);
             z.Inventory = Math.Max(0, z.Inventory + delta);
-            RecordActivityCore("库存", $"{z.Name} {(delta >= 0 ? "+" : "")}{delta} → {z.Inventory}");
-            return $"{z.Name} 库存现为 {z.Inventory} 件。";
+            RecordActivityCore("Inventory", $"{z.Name} {(delta >= 0 ? "+" : "")}{delta} → {z.Inventory}");
+            return $"{z.Name} inventory is now {z.Inventory} units.";
         });
     }
 
@@ -124,8 +124,8 @@ public partial class BuildingTwinState : ObservableObject
                 "info" => "info",
                 _ => "warning",
             };
-            RecordActivityCore("告警", $"{z.Name}: {message}");
-            return $"{z.Name} 告警已发布。";
+            RecordActivityCore("Alert", $"{z.Name}: {message}");
+            return $"{z.Name} alert published.";
         });
     }
 

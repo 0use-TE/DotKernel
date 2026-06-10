@@ -21,7 +21,7 @@ Set `DeepSeek:ApiKey` in `examples/DotKernel.AvaExample/appsettings.json`. Witho
 
 - **Left**: streaming chat with Markdown rendering
 - **Right**: digital twin (lighting, conveyor, AGV, robot, inventory, alarms)
-- **Bottom of twin panel**: tool call history (not in chat)
+- **Bottom of twin panel**: call history (not in chat); **Auto** / **Manual** tool approval toggle
 
 ## Live demo
 

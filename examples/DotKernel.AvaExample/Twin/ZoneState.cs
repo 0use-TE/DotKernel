@@ -47,15 +47,15 @@ public partial class ZoneState : ObservableObject
 
     public string RobotStatus => RobotTask switch
     {
-        "assemble" => "装配中",
-        "inspect" => "巡检中",
-        "pack" => "打包中",
-        _ => "待机",
+        "assemble" => "Assembling",
+        "inspect" => "Inspecting",
+        "pack" => "Packing",
+        _ => "Idle",
     };
 
     public string ConveyorStatus => ConveyorRunning
-        ? $"运行 {ConveyorSpeed}%"
-        : "停止";
+        ? $"Running {ConveyorSpeed}%"
+        : "Stopped";
 
     public void Reset(
         bool lightOn,

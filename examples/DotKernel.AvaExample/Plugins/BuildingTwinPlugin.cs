@@ -7,7 +7,7 @@ namespace DotKernel.AvaExample.Plugins;
 public partial class BuildingTwinPlugin(BuildingTwinState state)
 {
     [KernelFunction("get_snapshot")]
-    [KernelDescription("读取产线数字孪生当前全量状态，操作前应先调用")]
+    [KernelDescription("Read full digital twin state; call before other operations")]
     public Task<string> GetSnapshotAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -15,10 +15,10 @@ public partial class BuildingTwinPlugin(BuildingTwinState state)
     }
 
     [KernelFunction("set_light")]
-    [KernelDescription("开启或关闭指定区域照明")]
+    [KernelDescription("Turn zone lighting on or off")]
     public Task<string> SetLightAsync(
-        [KernelDescription("区域: assembly | storage | shipping")] string zone,
-        [KernelDescription("true=开灯, false=关灯")] bool on,
+        [KernelDescription("Zone: assembly | storage | shipping")] string zone,
+        [KernelDescription("true=on, false=off")] bool on,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -26,11 +26,11 @@ public partial class BuildingTwinPlugin(BuildingTwinState state)
     }
 
     [KernelFunction("set_conveyor")]
-    [KernelDescription("设置传送带速度与启停")]
+    [KernelDescription("Set conveyor speed and run/stop")]
     public Task<string> SetConveyorAsync(
-        [KernelDescription("区域: assembly | storage | shipping")] string zone,
-        [KernelDescription("速度 0-100")] double speed,
-        [KernelDescription("true=运行, false=停止")] bool running,
+        [KernelDescription("Zone: assembly | storage | shipping")] string zone,
+        [KernelDescription("Speed 0-100")] double speed,
+        [KernelDescription("true=run, false=stop")] bool running,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -38,10 +38,10 @@ public partial class BuildingTwinPlugin(BuildingTwinState state)
     }
 
     [KernelFunction("move_agv")]
-    [KernelDescription("调度 AGV 从一个区域移动到另一个区域")]
+    [KernelDescription("Dispatch AGV from one zone to another")]
     public Task<string> MoveAgvAsync(
-        [KernelDescription("起始区域")] string from_zone,
-        [KernelDescription("目标区域")] string to_zone,
+        [KernelDescription("Source zone")] string from_zone,
+        [KernelDescription("Destination zone")] string to_zone,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -49,10 +49,10 @@ public partial class BuildingTwinPlugin(BuildingTwinState state)
     }
 
     [KernelFunction("deploy_robot")]
-    [KernelDescription("部署区域机器人执行任务")]
+    [KernelDescription("Deploy zone robot with a task")]
     public Task<string> DeployRobotAsync(
-        [KernelDescription("区域: assembly | storage | shipping")] string zone,
-        [KernelDescription("任务: idle | assemble | inspect | pack")] string task,
+        [KernelDescription("Zone: assembly | storage | shipping")] string zone,
+        [KernelDescription("Task: idle | assemble | inspect | pack")] string task,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -60,10 +60,10 @@ public partial class BuildingTwinPlugin(BuildingTwinState state)
     }
 
     [KernelFunction("adjust_inventory")]
-    [KernelDescription("调整区域库存数量")]
+    [KernelDescription("Adjust zone inventory count")]
     public Task<string> AdjustInventoryAsync(
-        [KernelDescription("区域: assembly | storage | shipping")] string zone,
-        [KernelDescription("增减数量，负数表示出库")] double delta,
+        [KernelDescription("Zone: assembly | storage | shipping")] string zone,
+        [KernelDescription("Delta; negative removes stock")] double delta,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -71,11 +71,11 @@ public partial class BuildingTwinPlugin(BuildingTwinState state)
     }
 
     [KernelFunction("raise_alert")]
-    [KernelDescription("在区域触发告警横幅")]
+    [KernelDescription("Raise an alert banner in a zone")]
     public Task<string> RaiseAlertAsync(
-        [KernelDescription("区域: assembly | storage | shipping")] string zone,
-        [KernelDescription("告警内容")] string message,
-        [KernelDescription("级别: info | warning | critical")] string severity = "warning",
+        [KernelDescription("Zone: assembly | storage | shipping")] string zone,
+        [KernelDescription("Alert message")] string message,
+        [KernelDescription("Severity: info | warning | critical")] string severity = "warning",
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

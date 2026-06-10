@@ -52,22 +52,22 @@ internal sealed class EchoChatClient : IChatClient
                 new FunctionCallContent("alert-1", "Twin_raise_alert", new Dictionary<string, object?>
                 {
                     ["zone"] = "assembly",
-                    ["message"] = "AGV 到位，装配线已启动",
+                    ["message"] = "AGV arrived, assembly line started",
                     ["severity"] = "info",
                 }),
             ]),
             _ => new ChatResponse(new ChatMessage(ChatRole.Assistant, """
-                ## 产线调度完成
+                ## Line scheduling complete
 
-                | 步骤 | 结果 |
-                |------|------|
-                | 装配区照明 | 已开启 |
-                | 传送带 | 72% 运行中 |
-                | AGV | 仓储区 → 装配区 |
-                | 机器人 | 装配任务 |
-                | 库存 | 仓储区 -8 |
+                | Step | Result |
+                |------|--------|
+                | Assembly lighting | On |
+                | Conveyor | Running at 72% |
+                | AGV | Storage → Assembly |
+                | Robot | Assemble task |
+                | Inventory | Storage -8 |
 
-                右侧**数字孪生面板**已同步更新。
+                The **digital twin panel** on the right is up to date.
                 """)),
         });
     }

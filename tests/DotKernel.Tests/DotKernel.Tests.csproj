@@ -19,7 +19,8 @@
     <ProjectReference Include="..\..\src\DotKernel\DotKernel.csproj" />
     <ProjectReference Include="..\..\src\DotKernel.Generators\DotKernel.Generators.csproj"
                       OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishTrimmed;RuntimeIdentifier;SelfContained" />
   </ItemGroup>
 
 </Project>

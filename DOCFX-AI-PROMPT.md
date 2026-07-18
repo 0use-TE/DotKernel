@@ -20,7 +20,7 @@
 8. 侧边栏 toc：每语言各一份 toc.yml，只放文档章节。
 9. api/ 与 _site/ 不提交；改完 docfx docfx.json，0 error。
 10. 跨语言同页切换由 dk-switcher.js 按 html 文件名映射（getting-started、plugins-and-prompts、filters、avalonia-demo、aot-compatibility、introduction、index）。
-11. Web 演示密钥：GitHub Secret DEEPSEEK_API_KEY，CI 注入 appsettings.json，勿提交明文 Key。
+11. Web 演示密钥：GitHub Secret DEEPSEEK_API_KEY，CI 生成临时 appsettings.json 注入，勿提交明文 Key。
 ```
 
 ---

@@ -14,6 +14,7 @@ artifacts/
 
 ## Secrets — never commit keys
 **/secrets.json
+**/appsettings.json
 appsettings.*.local.json
 .env
 .env.*

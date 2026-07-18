@@ -34,18 +34,20 @@ jobs:
       - name: Build docs
         run: docfx docfx.json
 
-      - name: Inject DeepSeek API key for web demo
+      - name: Write DeepSeek settings for web demo
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           python3 <<'PY'
           import json, os
           p = "examples/DotKernel.AvaExample/appsettings.json"
-          with open(p) as f:
-              d = json.load(f)
-          key = os.environ.get("DEEPSEEK_API_KEY", "")
-          if key:
-              d.setdefault("DeepSeek", {})["ApiKey"] = key
+          d = {
+              "DeepSeek": {
+                  "ApiKey": os.environ.get("DEEPSEEK_API_KEY", ""),
+                  "Endpoint": "https://api.deepseek.com",
+                  "ModelId": "deepseek-chat",
+              }
+          }
           with open(p, "w") as f:
               json.dump(d, f, indent=2)
               f.write("\n")

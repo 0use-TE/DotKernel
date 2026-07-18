@@ -25,7 +25,7 @@ Use the **API** button in the header to open settings:
 | Model | Model id (default `deepseek-chat`) |
 | API key | Secret; leave empty for **Echo** scripted demo |
 
-Click **Apply** to swap the `IChatClient` at runtime (`Kernel.SetChatClient`). Values can also come from `appsettings.json` / user-secrets / `DOTKERNEL_` env vars on startup.
+Click **Apply** to swap the `IChatClient` at runtime (`Kernel.SetChatClient`). Startup defaults can come from user-secrets or `DOTKERNEL_` env vars (no committed `appsettings.json`).
 
 ## UI layout
 

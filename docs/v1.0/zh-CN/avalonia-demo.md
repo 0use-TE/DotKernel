@@ -25,7 +25,7 @@ dotnet run --project examples/DotKernel.AvaExample.Browser
 | Model | 模型名（默认 `deepseek-chat`） |
 | API key | 密钥；留空则使用 **Echo** 脚本演示 |
 
-点 **Apply** 会在运行时替换 `IChatClient`（`Kernel.SetChatClient`）。启动时也可从 `appsettings.json` / user-secrets / `DOTKERNEL_` 环境变量读取。
+点 **Apply** 会在运行时替换 `IChatClient`（`Kernel.SetChatClient`）。启动默认值可用 user-secrets 或 `DOTKERNEL_` 环境变量（仓库内不再提交 `appsettings.json`）。
 
 ## 界面
 

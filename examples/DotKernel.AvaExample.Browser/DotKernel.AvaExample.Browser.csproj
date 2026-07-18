@@ -14,7 +14,8 @@
     <ProjectReference Include="..\DotKernel.AvaExample\DotKernel.AvaExample.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!-- Optional: CI may generate this file to bake a demo API key into the WASM publish. -->
+  <ItemGroup Condition="Exists('..\DotKernel.AvaExample\appsettings.json')">
     <Content Include="..\DotKernel.AvaExample\appsettings.json" Link="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -34,7 +34,8 @@
     <ProjectReference Include="..\DotKernel.Generators\DotKernel.Generators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
-                      PrivateAssets="all" />
+                      PrivateAssets="all"
+                      GlobalPropertiesToRemove="PublishAot;PublishTrimmed;RuntimeIdentifier;SelfContained" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,7 +49,7 @@
 
   <Target Name="_PackDotKernelGenerator" DependsOnTargets="ResolveProjectReferences">
     <PropertyGroup>
-      <_GeneratorDll>$(MSBuildThisFileDirectory)..\DotKernel.Generators\bin\$(Configuration)\netstandard2.0\DotKernel.Generators.dll</_GeneratorDll>
+      <_GeneratorDll>$(MSBuildThisFileDirectory)..\DotKernel.Generators\bin\$(Configuration)\net10.0\DotKernel.Generators.dll</_GeneratorDll>
     </PropertyGroup>
     <Error Condition="!Exists('$(_GeneratorDll)')"
            Text="DotKernel.Generators.dll not found at '$(_GeneratorDll)'. Build the generator before packing." />

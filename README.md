@@ -44,16 +44,11 @@ var answer = await kernel.InvokeAsync("What's the weather in Seattle?");
 
 In the Avalonia demo, open **API** in the header and set Endpoint / Model / API key, then **Apply**.
 
-Or edit `examples/DotKernel.AvaExample/appsettings.json` before launch:
+Or set user-secrets / env vars (no committed `appsettings.json`):
 
-```json
-{
-  "DeepSeek": {
-    "ApiKey": "your-key",
-    "Endpoint": "https://api.deepseek.com",
-    "ModelId": "deepseek-chat"
-  }
-}
+```bash
+dotnet user-secrets set "DeepSeek:ApiKey" "your-key" --project examples/DotKernel.AvaExample
+# or: DOTKERNEL_DeepSeek__ApiKey=your-key
 ```
 
 Without an API key, the demo uses a built-in **Echo** client that runs a scripted multi-step tool chain.

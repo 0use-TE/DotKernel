@@ -3,8 +3,6 @@ using DotKernel.Example;
 using Microsoft.Extensions.Configuration;
 
 var configuration = new ConfigurationBuilder()
-    .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: true)
     .AddUserSecrets(typeof(Program).Assembly, optional: true)
     .AddEnvironmentVariables(prefix: "DOTKERNEL_")
     .Build();

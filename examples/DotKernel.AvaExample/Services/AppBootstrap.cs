@@ -24,12 +24,18 @@ public static class AppBootstrap
     {
         var builder = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: true)
             .AddEnvironmentVariables(prefix: "DOTKERNEL_");
 
         if (useUserSecrets)
         {
             builder.AddUserSecrets(typeof(App).Assembly, optional: true);
+        }
+
+        // Optional local/CI file (not committed). UI can also set Endpoint / Model / API key at runtime.
+        var appsettings = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        if (File.Exists(appsettings))
+        {
+            builder.AddJsonFile(appsettings, optional: true);
         }
 
         return builder.Build();

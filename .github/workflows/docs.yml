@@ -34,14 +34,13 @@ jobs:
       - name: Build docs
         run: docfx docfx.json
 
-      # Browsers/CDN often cache toc.html used to build the top navbar.
-      # Bust query so Version/Docs nav updates are not stuck on an old TOC.
-      - name: Cache-bust nav and toc refs
+      # DocFX modern JS does: tocrel/navrel.replace(/\.html$/i, '.json') then fetch JSON.
+      # Never append ?query to those meta values — it breaks the replace and empties the left TOC.
+      # Only cache-bust static assets that are loaded by plain <script>/<link> href.
+      - name: Cache-bust switcher assets
         run: |
           SHA="${{ github.sha }}"
           find _site -name '*.html' -type f -print0 | xargs -0 sed -i \
-            -e "s|name=\"docfx:navrel\" content=\"\\([^\"]*\\)\"|name=\"docfx:navrel\" content=\"\\1?v=${SHA}\"|" \
-            -e "s|name=\"docfx:tocrel\" content=\"\\([^\"]*\\)\"|name=\"docfx:tocrel\" content=\"\\1?v=${SHA}\"|" \
             -e "s|public/dk-switcher\\.js|public/dk-switcher.js?v=${SHA}|g" \
             -e "s|public/dk-switcher\\.css|public/dk-switcher.css?v=${SHA}|g"
 

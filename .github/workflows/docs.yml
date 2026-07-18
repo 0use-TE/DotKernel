@@ -34,6 +34,17 @@ jobs:
       - name: Build docs
         run: docfx docfx.json
 
+      # Browsers/CDN often cache toc.html used to build the top navbar.
+      # Bust query so Version/Docs nav updates are not stuck on an old TOC.
+      - name: Cache-bust nav and toc refs
+        run: |
+          SHA="${{ github.sha }}"
+          find _site -name '*.html' -type f -print0 | xargs -0 sed -i \
+            -e "s|name=\"docfx:navrel\" content=\"\\([^\"]*\\)\"|name=\"docfx:navrel\" content=\"\\1?v=${SHA}\"|" \
+            -e "s|name=\"docfx:tocrel\" content=\"\\([^\"]*\\)\"|name=\"docfx:tocrel\" content=\"\\1?v=${SHA}\"|" \
+            -e "s|public/dk-switcher\\.js|public/dk-switcher.js?v=${SHA}|g" \
+            -e "s|public/dk-switcher\\.css|public/dk-switcher.css?v=${SHA}|g"
+
       - name: Write DeepSeek settings for web demo
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}

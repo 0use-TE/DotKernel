@@ -26,9 +26,8 @@
   }
 
   function currentVersion() {
-    for (const v of versions) {
-      if (path.includes('/' + v + '/')) return v;
-    }
+    const match = path.match(/\/docs\/(v[\d.]+)\//i);
+    if (match && versions.includes(match[1])) return match[1];
     return defaultVersion;
   }
 

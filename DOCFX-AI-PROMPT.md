@@ -10,18 +10,19 @@
 ```
 你在维护 DotKernel 的 DocFX 文档时，必须遵循：
 
-1. 版本切换：只用顶栏 navbar 的 Version 下拉（docfx/template + dk-switcher.js）。根 toc.yml：Home | v1.0.1 | v1.0 | API Reference | Live demo。默认最新版 v1.0.1。
+1. 版本切换：只用顶栏左侧 Version 下拉（不要在根 toc 放版本号链接）。根 toc.yml：Home | Docs（指向最新版）| API Reference | Live demo。默认最新版 v1.0.1。
 2. 语言切换：只用顶栏 navbar 的 Lang 下拉（English / 简体中文）。正文里不要写行内双语链接。
 3. 双语结构：docs/<version>/（英文）与 docs/<version>/zh-CN/（中文）镜像；文件名一一对应。当前版本目录：docs/v1.0.1/、docs/v1.0/。
 4. GitHub Pages 项目站：globalMetadata._appBasePath: "/DotKernel/"（线上：https://0use.net/DotKernel/）。
-5. docfx.json template：["default", "modern", "docfx/template"]；顶栏在 docfx/template/layout/_master.tmpl，脚本 docfx/template/public/dk-switcher.js（versions 数组须与文件夹名一致）。
+5. docfx.json template：["default", "modern", "docfx/template"]；顶栏在 docfx/template/layout/_master.tmpl，脚本 docfx/template/public/dk-switcher.js（versions 数组须与文件夹名一致，最新在前）。
 6. introduction.md 用 redirect_url: getting-started.html。
 7. Live demo：CI 将 Browser WASM 发布到 _site/demo/，base href="/DotKernel/demo/"；顶栏 Live demo 链到 demo/。
 8. 侧边栏 toc：每语言各一份 toc.yml，只放文档章节。
 9. api/ 与 _site/ 不提交；改完 docfx docfx.json，0 error。
 10. 跨语言/跨版本同页切换由 dk-switcher.js 按 html 文件名映射（getting-started、plugins-and-prompts、filters、avalonia-demo、aot-compatibility、release-notes、introduction、index）。
 11. Web 演示密钥：GitHub Secret DEEPSEEK_API_KEY，CI 生成临时 appsettings.json 注入，勿提交明文 Key。
-12. 发新 NuGet 小版本时：复制 docs/上一版 → docs/vX.Y.Z，更新 _master.tmpl 的 option、dk-switcher.js 的 versions（最新在前）、根 toc.yml。```
+12. 发新 NuGet 小版本时：复制 docs/上一版 → docs/vX.Y.Z，更新 _master.tmpl 的 option、dk-switcher.js 的 versions（最新在前）、根 toc.yml 的 Docs 指向最新版。
+```
 
 ---
 

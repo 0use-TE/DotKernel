@@ -16,6 +16,7 @@ public sealed class KernelHost
 
         Reply in English Markdown (headings, lists, tables, bold, code blocks). Summarize actions and line state concisely.
         Do not use GitHub Alert syntax (e.g. > [!NOTE], > [!TIP]) or emoji list markers.
+        A live context block with Twin.* properties is injected automatically each turn.
         """;
 
     private ChatHistory _history = new();
@@ -27,6 +28,9 @@ public sealed class KernelHost
     }
 
     public Kernel Kernel { get; }
+
+    public void SetChatClient(Microsoft.Extensions.AI.IChatClient chatClient) =>
+        Kernel.SetChatClient(chatClient);
 
     public IAsyncEnumerable<KernelStreamingUpdate> StreamAsync(
         string input,

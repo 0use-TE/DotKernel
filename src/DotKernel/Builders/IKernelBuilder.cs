@@ -18,5 +18,7 @@ public interface IKernelBuilder
 
     void AddPrompt(PromptDefinition prompt);
 
+    void AddProperty(KernelPropertyDescriptor property);
+
     Kernel Build();
 }

@@ -12,8 +12,8 @@
              Background="#0E1117">
 
   <Grid ColumnDefinitions="*,480" Margin="20">
-    <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="14">
-      <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+    <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="14">
+      <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
         <StackPanel Spacing="4">
           <TextBlock Text="DotKernel Agent" FontSize="26" FontWeight="Bold" Foreground="#F3F6FC"/>
           <TextBlock Text="Multi-turn scheduling · Streaming chat · Digital twin" Opacity="0.65" FontSize="13"/>
@@ -24,9 +24,34 @@
             <TextBlock Text="{Binding ConnectionStatus}" VerticalAlignment="Center" FontSize="12"/>
           </StackPanel>
         </Border>
+        <Button Grid.Column="2" Classes="ghost-button" Height="36" Command="{Binding ToggleSettingsCommand}"
+                VerticalAlignment="Center">
+          <TextBlock Text="API" VerticalAlignment="Center"/>
+        </Button>
       </Grid>
 
-      <Border Grid.Row="1" Classes="chat-shell" Padding="16">
+      <Border Grid.Row="1" Classes="chat-shell" Padding="12" IsVisible="{Binding ShowSettings}">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+          <TextBlock Text="Chat provider" FontWeight="SemiBold" Foreground="#E2E8F0"/>
+          <Grid Grid.Row="1" ColumnDefinitions="100,*" ColumnSpacing="8">
+            <TextBlock Text="Endpoint" Opacity="0.7" VerticalAlignment="Center" FontSize="12"/>
+            <TextBox Grid.Column="1" Text="{Binding Endpoint}" PlaceholderText="https://api.deepseek.com"/>
+          </Grid>
+          <Grid Grid.Row="2" ColumnDefinitions="100,*" ColumnSpacing="8">
+            <TextBlock Text="Model" Opacity="0.7" VerticalAlignment="Center" FontSize="12"/>
+            <TextBox Grid.Column="1" Text="{Binding ModelId}" PlaceholderText="deepseek-chat"/>
+          </Grid>
+          <Grid Grid.Row="3" ColumnDefinitions="100,*,Auto" ColumnSpacing="8">
+            <TextBlock Text="API key" Opacity="0.7" VerticalAlignment="Center" FontSize="12"/>
+            <TextBox Grid.Column="1" Text="{Binding ApiKey}" PasswordChar="•" PlaceholderText="sk-..."/>
+            <Button Grid.Column="2" Classes="accent" Height="36" Command="{Binding ApplyChatSettingsCommand}">
+              <TextBlock Text="Apply" VerticalAlignment="Center"/>
+            </Button>
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Row="2" Classes="chat-shell" Padding="16">
         <ScrollViewer>
           <ItemsControl ItemsSource="{Binding Messages}">
             <ItemsControl.DataTemplates>
@@ -61,7 +86,7 @@
         </ScrollViewer>
       </Border>
 
-      <Border Grid.Row="2" Background="#12161F" BorderBrush="#2A3142" BorderThickness="1" CornerRadius="12" Padding="4">
+      <Border Grid.Row="3" Background="#12161F" BorderBrush="#2A3142" BorderThickness="1" CornerRadius="12" Padding="4">
         <TextBox Text="{Binding InputText}"
                  PlaceholderText="Describe a production-line task; the agent will call tools and update the twin panel"
                  AcceptsReturn="True"
@@ -71,7 +96,7 @@
                  BorderThickness="0"/>
       </Border>
 
-      <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+      <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
           <Path Data="{StaticResource IconPulse}" Width="14" Height="14" Stretch="Uniform"
                 Stroke="#7DD3FC" StrokeThickness="1.4" Opacity="0.8"/>

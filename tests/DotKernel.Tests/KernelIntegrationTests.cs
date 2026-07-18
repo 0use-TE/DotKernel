@@ -57,6 +57,45 @@ public class KernelIntegrationTests
     }
 
     [Fact]
+    public void KernelProperty_is_registered_and_rendered_into_context()
+    {
+        var plugin = new WeatherPlugin { TemperatureUnit = "F" };
+        var kernel = KernelBuilder.Create()
+            .AddChatClient(new MockChatClient())
+            .AddPlugin(plugin)
+            .Build();
+
+        var map = kernel.GetPropertyContext();
+        Assert.Equal("F", map["Weather.temperature_unit"]);
+
+        var rendered = kernel.RenderPropertyContext();
+        Assert.Contains("Weather.temperature_unit", rendered, StringComparison.Ordinal);
+        Assert.Contains("F", rendered, StringComparison.Ordinal);
+        Assert.Contains("Unit used when reporting weather", rendered, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_injects_kernel_property_context_into_request()
+    {
+        var mock = new MockChatClient();
+        mock.Enqueue(new ChatResponse(new ChatMessage(ChatRole.Assistant, "ok")));
+
+        var plugin = new WeatherPlugin { TemperatureUnit = "F" };
+        var kernel = KernelBuilder.Create()
+            .AddChatClient(mock)
+            .AddPlugin(plugin)
+            .Build();
+
+        await kernel.InvokeAsync("hi");
+
+        var first = Assert.Single(mock.LastRequestMessages!, m => m.Role == ChatRole.System
+            && m.Text is not null
+            && m.Text.Contains("Live context", StringComparison.Ordinal));
+        Assert.Contains("temperature_unit", first.Text!, StringComparison.Ordinal);
+        Assert.Contains(": F", first.Text!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task InvokeStreamingAsync_yields_text_deltas_and_completes()
     {
         var mock = new MockChatClient();

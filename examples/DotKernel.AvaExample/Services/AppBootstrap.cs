@@ -9,7 +9,15 @@ public static class AppBootstrap
     {
         var configuration = BuildConfiguration(useUserSecrets);
         var (host, twin, historyFilter, confirmationFilter, status) = KernelAppFactory.Create(configuration);
-        return new MainViewModel(host, twin, historyFilter, confirmationFilter, status);
+        return new MainViewModel(
+            host,
+            twin,
+            historyFilter,
+            confirmationFilter,
+            status,
+            apiKey: configuration["DeepSeek:ApiKey"],
+            endpoint: configuration["DeepSeek:Endpoint"],
+            modelId: configuration["DeepSeek:ModelId"]);
     }
 
     public static IConfiguration BuildConfiguration(bool useUserSecrets)

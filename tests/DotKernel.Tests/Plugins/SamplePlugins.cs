@@ -3,6 +3,9 @@ namespace DotKernel.Tests.Plugins;
 [KernelPlugin("Weather")]
 public partial class WeatherPlugin
 {
+    [KernelProperty("temperature_unit", "Unit used when reporting weather (C or F)")]
+    public string TemperatureUnit { get; set; } = "C";
+
     [KernelPrompt("system", Role = PromptRole.System)]
     public string SystemPrompt => "你是天气助手，回答简洁。";
 
@@ -12,7 +15,7 @@ public partial class WeatherPlugin
         [KernelDescription("城市名称")] string city,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult($"{city}：晴，25°C");
+        return Task.FromResult($"{city}：晴，25°{TemperatureUnit}");
     }
 }
 

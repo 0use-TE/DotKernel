@@ -22,4 +22,8 @@
   <ItemGroup>
     <ProjectReference Include="..\DotKernel.AvaExample\DotKernel.AvaExample.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
 </Project>

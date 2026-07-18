@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DotKernel;
 using DotKernel.AvaExample.Filters;
+using DotKernel.AvaExample.Infrastructure;
 using DotKernel.AvaExample.Services;
 using DotKernel.AvaExample.Twin;
 
@@ -21,7 +22,10 @@ public partial class MainViewModel : ViewModelBase
         BuildingTwinState twin,
         ToolCallHistoryFilter historyFilter,
         ToolCallConfirmationFilter confirmationFilter,
-        string status)
+        string status,
+        string? apiKey = null,
+        string? endpoint = null,
+        string? modelId = null)
     {
         _host = host;
         _twin = twin;
@@ -29,6 +33,9 @@ public partial class MainViewModel : ViewModelBase
         Twin = twin;
         ConnectionStatus = status;
         AutoApproveTools = confirmationFilter.AutoApproveTools;
+        ApiKey = apiKey ?? string.Empty;
+        Endpoint = string.IsNullOrWhiteSpace(endpoint) ? "https://api.deepseek.com" : endpoint;
+        ModelId = string.IsNullOrWhiteSpace(modelId) ? "deepseek-chat" : modelId;
 
         historyFilter.Recorded += context =>
         {
@@ -81,6 +88,7 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ApplyChatSettingsCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -101,6 +109,18 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private string _pendingToolArguments = "";
 
+    [ObservableProperty]
+    private bool _showSettings = true;
+
+    [ObservableProperty]
+    private string _apiKey = "";
+
+    [ObservableProperty]
+    private string _endpoint = "https://api.deepseek.com";
+
+    [ObservableProperty]
+    private string _modelId = "deepseek-chat";
+
     partial void OnAutoApproveToolsChanged(bool value)
     {
         _confirmationFilter.AutoApproveTools = value;
@@ -109,6 +129,28 @@ public partial class MainViewModel : ViewModelBase
             HasPendingConfirmation = false;
         }
     }
+
+    [RelayCommand]
+    private void ToggleSettings() => ShowSettings = !ShowSettings;
+
+    [RelayCommand(CanExecute = nameof(CanApplySettings))]
+    private void ApplyChatSettings()
+    {
+        try
+        {
+            var (client, status) = DeepSeekChatClientFactory.Create(ApiKey, Endpoint, ModelId);
+            _host.SetChatClient(client);
+            ConnectionStatus = status;
+            PendingAction = "Chat client updated";
+        }
+        catch (Exception ex)
+        {
+            Messages.Add(new ChatLineViewModel("Error", ex.Message, isError: true));
+            ConnectionStatus = "Settings error";
+        }
+    }
+
+    private bool CanApplySettings() => !IsBusy;
 
     [RelayCommand]
     private void ApproveToolCall()

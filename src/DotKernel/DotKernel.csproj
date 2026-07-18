@@ -5,7 +5,24 @@
     <RootNamespace>DotKernel</RootNamespace>
     <AssemblyName>DotKernel</AssemblyName>
     <IsAotCompatible>true</IsAotCompatible>
-    <Description>Lightweight, AOT-friendly AI kernel with attribute-driven plugins, prompts, and filters.</Description>
+
+    <!-- NuGet -->
+    <PackageId>DotKernel</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>0use-TE</Authors>
+    <Company>0use-TE</Company>
+    <Description>Lightweight, Native AOT–friendly AI kernel with attribute-driven plugins, prompts, and filters.</Description>
+    <PackageTags>ai;llm;kernel;aot;plugins;microsoft-extensions-ai;source-generator</PackageTags>
+    <PackageProjectUrl>https://github.com/0use-TE/DotKernel</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/0use-TE/DotKernel</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,11 +33,28 @@
   <ItemGroup>
     <ProjectReference Include="..\DotKernel.Generators\DotKernel.Generators.csproj"
                       OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="build\DotKernel.targets" Pack="true" PackagePath="build\DotKernel.targets" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+
+  <!-- Ship source generator inside this package (NuGet auto-loads analyzers/dotnet/cs). -->
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_PackDotKernelGenerator</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="_PackDotKernelGenerator" DependsOnTargets="ResolveProjectReferences">
+    <PropertyGroup>
+      <_GeneratorDll>$(MSBuildThisFileDirectory)..\DotKernel.Generators\bin\$(Configuration)\netstandard2.0\DotKernel.Generators.dll</_GeneratorDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_GeneratorDll)')"
+           Text="DotKernel.Generators.dll not found at '$(_GeneratorDll)'. Build the generator before packing." />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_GeneratorDll)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
 
 </Project>

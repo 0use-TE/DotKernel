@@ -5,6 +5,7 @@
     <LangVersion>latest</LangVersion>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <UserSecretsId>dotkernel-example-7f3a9c2e-4b1d-4e8a-9f6c-2d5e8a1b3c4d</UserSecretsId>
+	  <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>

@@ -5,9 +5,10 @@ namespace DotKernel;
 
 public sealed class Kernel
 {
-    private readonly IChatClient _chatClient;
+    private IChatClient _chatClient;
     private readonly IReadOnlyDictionary<string, KernelFunctionDescriptor> _functionsByToolName;
     private readonly IReadOnlyDictionary<string, PromptDefinition> _promptsByFullName;
+    private readonly IReadOnlyList<KernelPropertyDescriptor> _properties;
     private readonly IReadOnlyDictionary<string, object?> _pluginInstances;
     private readonly FilterPipeline _filterPipeline;
     private readonly IList<AIFunction> _aiFunctions;
@@ -16,15 +17,61 @@ public sealed class Kernel
         IChatClient chatClient,
         IReadOnlyList<KernelFunctionDescriptor> functions,
         IReadOnlyList<PromptDefinition> prompts,
+        IReadOnlyList<KernelPropertyDescriptor> properties,
         IReadOnlyDictionary<string, object?> pluginInstances,
         IReadOnlyList<IKernelFilter> filters)
     {
         _chatClient = chatClient;
         _functionsByToolName = functions.ToDictionary(f => f.ToolName, StringComparer.OrdinalIgnoreCase);
         _promptsByFullName = prompts.ToDictionary(p => p.FullName, StringComparer.OrdinalIgnoreCase);
+        _properties = properties;
         _pluginInstances = pluginInstances;
         _filterPipeline = new FilterPipeline(filters);
         _aiFunctions = functions.Select(f => (AIFunction)new KernelAIFunction(f)).ToList();
+    }
+
+    /// <summary>Swap the underlying chat client (e.g. after the user changes API settings).</summary>
+    public void SetChatClient(IChatClient chatClient) =>
+        _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
+
+    /// <summary>Read all [KernelProperty] values from registered plugin instances.</summary>
+    public IReadOnlyDictionary<string, string?> GetPropertyContext()
+    {
+        var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var property in _properties)
+        {
+            var instance = ResolveInstance(property.DeclaringType);
+            var value = property.Getter(instance);
+            result[property.FullName] = value?.ToString();
+        }
+
+        return result;
+    }
+
+    /// <summary>Render property context as text for prompts / debugging.</summary>
+    public string RenderPropertyContext()
+    {
+        if (_properties.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("## Live context");
+        foreach (var property in _properties)
+        {
+            var instance = ResolveInstance(property.DeclaringType);
+            var value = property.Getter(instance)?.ToString() ?? "(null)";
+            sb.Append("- ").Append(property.FullName);
+            if (!string.IsNullOrWhiteSpace(property.Description))
+            {
+                sb.Append(" (").Append(property.Description).Append(')');
+            }
+
+            sb.Append(": ").AppendLine(value);
+        }
+
+        return sb.ToString().TrimEnd();
     }
 
     public string RenderPrompt(string fullName, IReadOnlyDictionary<string, string?>? variables = null, object? instance = null)
@@ -129,7 +176,7 @@ public sealed class Kernel
             var updates = new List<ChatResponseUpdate>();
 
             await foreach (var update in _chatClient
-                .GetStreamingResponseAsync(history.Messages, options, cancellationToken)
+                .GetStreamingResponseAsync(BuildMessagesWithContext(history), options, cancellationToken)
                 .ConfigureAwait(false))
             {
                 updates.Add(update);
@@ -178,8 +225,24 @@ public sealed class Kernel
     {
         var options = new ChatOptions { Tools = [.. _aiFunctions] };
         return await _chatClient
-            .GetResponseAsync(history.Messages, options, cancellationToken)
+            .GetResponseAsync(BuildMessagesWithContext(history), options, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    private IList<ChatMessage> BuildMessagesWithContext(ChatHistory history)
+    {
+        var context = RenderPropertyContext();
+        if (string.IsNullOrWhiteSpace(context))
+        {
+            return history.Messages is IList<ChatMessage> list ? list : history.Messages.ToList();
+        }
+
+        var messages = new List<ChatMessage>(history.Messages.Count + 1)
+        {
+            new(ChatRole.System, context),
+        };
+        messages.AddRange(history.Messages);
+        return messages;
     }
 
     private async Task ProcessToolCallsAsync(
@@ -250,7 +313,7 @@ public sealed class Kernel
     private async Task<string> CompleteAsync(ChatHistory history, CancellationToken cancellationToken)
     {
         var response = await _chatClient
-            .GetResponseAsync(history.Messages, cancellationToken: cancellationToken)
+            .GetResponseAsync(BuildMessagesWithContext(history), cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
         var text = response.Text ?? string.Empty;

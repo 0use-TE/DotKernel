@@ -1,6 +1,0 @@
-<Project>
-  <ItemGroup>
-    <Analyzer Include="$(MSBuildThisFileDirectory)..\DotKernel.Generators\bin\$(Configuration)\netstandard2.0\DotKernel.Generators.dll"
-              Condition="Exists('$(MSBuildThisFileDirectory)..\DotKernel.Generators\bin\$(Configuration)\netstandard2.0\DotKernel.Generators.dll')" />
-  </ItemGroup>
-</Project>

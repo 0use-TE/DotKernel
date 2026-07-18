@@ -6,6 +6,12 @@ namespace DotKernel.AvaExample.Plugins;
 [KernelPlugin("Twin")]
 public partial class BuildingTwinPlugin(BuildingTwinState state)
 {
+    [KernelProperty("agv_zone", "Zone where the AGV currently is (assembly|storage|shipping)")]
+    public string AgvZone => state.AgvZoneId;
+
+    [KernelProperty("total_actions", "How many twin mutations have been applied this session")]
+    public int TotalActions => state.TotalActions;
+
     [KernelFunction("get_snapshot")]
     [KernelDescription("Read full digital twin state; call before other operations")]
     public Task<string> GetSnapshotAsync(CancellationToken cancellationToken = default)

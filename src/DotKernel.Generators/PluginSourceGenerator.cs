@@ -17,6 +17,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
     private const string PromptVariableAttribute = "DotKernel.PromptVariableAttribute";
     private const string KernelDescriptionAttribute = "DotKernel.KernelDescriptionAttribute";
     private const string KernelFilterAttribute = "DotKernel.KernelFilterAttribute";
+    private const string KernelPropertyAttribute = "DotKernel.KernelPropertyAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -60,8 +61,9 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         var functions = GetFunctions(typeSymbol, pluginName);
         var prompts = GetPrompts(typeSymbol, pluginName);
         var variables = GetVariables(typeSymbol);
+        var contextProperties = GetContextProperties(typeSymbol);
 
-        if (functions.IsEmpty && prompts.IsEmpty)
+        if (functions.IsEmpty && prompts.IsEmpty && contextProperties.IsEmpty)
         {
             return null;
         }
@@ -74,6 +76,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             functions,
             prompts,
             variables,
+            contextProperties,
             IsPartial(typeSymbol));
     }
 
@@ -327,6 +330,56 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         return list.ToImmutable();
     }
 
+    private static ImmutableArray<ContextPropertyModel> GetContextProperties(INamedTypeSymbol typeSymbol)
+    {
+        var list = ImmutableArray.CreateBuilder<ContextPropertyModel>();
+
+        foreach (var member in typeSymbol.GetMembers())
+        {
+            if (member is not IPropertySymbol property || property.IsIndexer || property.GetMethod is null)
+            {
+                continue;
+            }
+
+            var attr = property.GetAttributes()
+                .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == KernelPropertyAttribute);
+            if (attr is null)
+            {
+                continue;
+            }
+
+            string? name = null;
+            string? description = null;
+
+            if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is string n)
+            {
+                name = n;
+            }
+
+            if (attr.ConstructorArguments.Length > 1 && attr.ConstructorArguments[1].Value is string d)
+            {
+                description = d;
+            }
+
+            foreach (var named in attr.NamedArguments)
+            {
+                if (named.Key == "Description" && named.Value.Value is string nd)
+                {
+                    description = nd;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = property.Name;
+            }
+
+            list.Add(new ContextPropertyModel(property.Name, name!, description, property.IsStatic));
+        }
+
+        return list.ToImmutable();
+    }
+
     private static void EmitPlugin(SourceProductionContext context, PluginModel model)
     {
         if (!model.IsPartial)
@@ -374,6 +427,26 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         foreach (var prompt in model.Prompts)
         {
             EmitPromptRegistration(sb, model.PluginName, model.FullyQualifiedType, prompt, model.Variables);
+        }
+
+        foreach (var property in model.ContextProperties)
+        {
+            sb.AppendLine("        builder.AddProperty(new global::DotKernel.KernelPropertyDescriptor");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            PluginName = \"{Escape(model.PluginName)}\",");
+            sb.AppendLine($"            PropertyName = \"{Escape(property.ContextName)}\",");
+            sb.AppendLine($"            Description = {(property.Description is null ? "null" : $"\"{Escape(property.Description)}\"")},");
+            sb.AppendLine($"            DeclaringType = typeof({model.FullyQualifiedType}),");
+            if (property.IsStatic)
+            {
+                sb.AppendLine($"            Getter = static _ => {model.FullyQualifiedType}.{property.PropertyName},");
+            }
+            else
+            {
+                sb.AppendLine($"            Getter = static instance => (({model.FullyQualifiedType})instance!).{property.PropertyName},");
+            }
+
+            sb.AppendLine("        });");
         }
 
         sb.AppendLine("    }");
@@ -684,6 +757,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             ImmutableArray<FunctionModel> functions,
             ImmutableArray<PromptModel> prompts,
             ImmutableArray<VariableModel> variables,
+            ImmutableArray<ContextPropertyModel> contextProperties,
             bool isPartial)
         {
             FullyQualifiedType = fullyQualifiedType;
@@ -693,6 +767,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             Functions = functions;
             Prompts = prompts;
             Variables = variables;
+            ContextProperties = contextProperties;
             IsPartial = isPartial;
         }
 
@@ -704,6 +779,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         public ImmutableArray<FunctionModel> Functions { get; }
         public ImmutableArray<PromptModel> Prompts { get; }
         public ImmutableArray<VariableModel> Variables { get; }
+        public ImmutableArray<ContextPropertyModel> ContextProperties { get; }
         public bool IsPartial { get; }
     }
 
@@ -836,6 +912,22 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         public string? Description { get; }
         public string? Default { get; }
         public bool Required { get; }
+    }
+
+    private sealed class ContextPropertyModel
+    {
+        public ContextPropertyModel(string propertyName, string contextName, string? description, bool isStatic)
+        {
+            PropertyName = propertyName;
+            ContextName = contextName;
+            Description = description;
+            IsStatic = isStatic;
+        }
+
+        public string PropertyName { get; }
+        public string ContextName { get; }
+        public string? Description { get; }
+        public bool IsStatic { get; }
     }
 
     private enum ReturnKind

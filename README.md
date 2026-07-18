@@ -8,7 +8,8 @@ Lightweight, **Native AOT–friendly** AI kernel for .NET. Register plugins, pro
 
 ## Features
 
-- Attribute-driven plugins (`[KernelPlugin]`, `[KernelFunction]`, `[KernelPrompt]`)
+- Attribute-driven plugins (`[KernelPlugin]`, `[KernelFunction]`, `[KernelPrompt]`, `[KernelProperty]`)
+- Live context: marked properties injected into each model request
 - Tool-call filter pipeline with auto / manual approval
 - Streaming via `InvokeStreamingAsync`
 - Source generator for trim-safe static registration
@@ -22,6 +23,8 @@ cd DotKernel
 dotnet test
 dotnet run --project examples/DotKernel.AvaExample.Desktop
 ```
+
+Docs version: **v1.0** (NuGet package not published yet — reference the project).
 
 ### Minimal kernel
 
@@ -39,7 +42,9 @@ var answer = await kernel.InvokeAsync("What's the weather in Seattle?");
 
 ### Configure DeepSeek (optional)
 
-Edit `examples/DotKernel.AvaExample/appsettings.json`:
+In the Avalonia demo, open **API** in the header and set Endpoint / Model / API key, then **Apply**.
+
+Or edit `examples/DotKernel.AvaExample/appsettings.json` before launch:
 
 ```json
 {
@@ -85,10 +90,11 @@ dotnet run --project examples/DotKernel.AvaExample.Browser
 
 **UI**
 
-- Left: streaming chat with Markdown replies
+- Left: streaming chat with Markdown replies; **API** panel for Endpoint / Model / API key
 - Right: digital twin (lighting, conveyor, AGV, robot, inventory, alerts)
 - Tool calls are logged in the **Call history** panel (not in chat bubbles)
 - Toggle **Auto** / **Manual** for tool approval (default: Auto)
+- `[KernelProperty]` on the twin plugin injects live context each turn
 
 ## Native AOT publish
 

@@ -4,6 +4,7 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<UserSecretsId>fc1dd6a8-56d0-49f0-914a-cdf8ab7ff59e</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>

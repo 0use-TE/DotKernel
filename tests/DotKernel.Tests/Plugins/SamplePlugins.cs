@@ -19,6 +19,16 @@ public partial class WeatherPlugin
     }
 }
 
+/// <summary>Docs-style sync tool with no CancellationToken (regression for generator call args).</summary>
+[KernelPlugin("SimpleWeather")]
+public partial class SimpleWeatherPlugin
+{
+    [KernelFunction("get_weather")]
+    [KernelDescription("查询城市天气")]
+    public string GetWeather([KernelDescription("城市名")] string city)
+        => $"{city} 晴天";
+}
+
 [KernelPromptClass("Email")]
 public partial class EmailPrompt
 {

@@ -7,6 +7,10 @@ _layout: landing
 Lightweight, Native AOT–friendly AI kernel with attribute-driven plugins, prompts, and filters.
 
 ```bash
+dotnet add package DotKernel --version 1.0.1
+```
+
+```bash
 dotnet run --project examples/DotKernel.AvaExample.Desktop
 ```
 

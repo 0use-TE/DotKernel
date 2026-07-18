@@ -24,14 +24,18 @@ dotnet test
 dotnet run --project examples/DotKernel.AvaExample.Desktop
 ```
 
-Docs version: **v1.0** (NuGet package not published yet — reference the project).
+Docs version: **v1.0.1** · NuGet: **[DotKernel 1.0.1](https://www.nuget.org/packages/DotKernel/)**
 
-### Minimal kernel (OpenAI)
+### Install
 
 ```bash
+dotnet add package DotKernel --version 1.0.1
 dotnet add package Microsoft.Extensions.AI.OpenAI
-# plus ProjectReference to DotKernel (or: dotnet add package DotKernel when published)
 ```
+
+> Use **1.0.1+** (1.0.0 could fail compiling sync `[KernelFunction]` methods without `CancellationToken`). See [release notes](docs/v1.0.1/release-notes.md).
+
+### Minimal kernel (OpenAI)
 
 ```csharp
 using DotKernel;
@@ -50,7 +54,7 @@ var kernel = KernelBuilder.Create()
 var answer = await kernel.InvokeAsync("What's the weather in Seattle?");
 ```
 
-Full walkthrough: [Quick Start](https://0use.net/DotKernel/docs/v1.0/getting-started.html).
+Full walkthrough: [Quick Start](https://0use.net/DotKernel/docs/v1.0.1/getting-started.html).
 
 ### Configure DeepSeek (optional)
 
@@ -111,7 +115,15 @@ dotnet run --project examples/DotKernel.AvaExample.Browser
 
 ## Documentation
 
-Build locally:
+Build and preview locally (uses `/` base path so links work on localhost):
+
+```powershell
+# One-off local preview (GitHub Pages uses /DotKernel/ in docfx.json)
+(Get-Content docfx.json -Raw) -replace '"_appBasePath":\s*"/DotKernel/"', '"_appBasePath": "/"' | Set-Content docfx.local.json
+docfx docfx.local.json
+docfx serve _site --port 8080
+# open http://localhost:8080/
+```
 
 ```bash
 dotnet tool update -g docfx
@@ -120,6 +132,15 @@ docfx serve _site --port 8080
 ```
 
 GitHub Actions publishes docs + WASM demo to GitHub Pages on push to `main`. Set repository secret `DEEPSEEK_API_KEY` for the live web demo.
+
+## NuGet pack / publish
+
+```powershell
+dotnet pack src/DotKernel/DotKernel.csproj -c Release -o artifacts
+# packages: artifacts/DotKernel.1.0.1.nupkg (+ .snupkg)
+
+dotnet nuget push artifacts/DotKernel.1.0.1.nupkg --api-key <YOUR_KEY> --source https://api.nuget.org/v3/index.json
+```
 
 ## License
 

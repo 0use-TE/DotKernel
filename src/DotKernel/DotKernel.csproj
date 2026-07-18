@@ -8,7 +8,11 @@
 
     <!-- NuGet -->
     <PackageId>DotKernel</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
+    <PackageReleaseNotes>
+1.0.1: Fix source generator calling sync [KernelFunction] methods with an unwanted CancellationToken (CS1501). Prefer this over 1.0.0.
+1.0.0: Initial release — attribute plugins/prompts/filters, KernelProperty live context, Native AOT–friendly.
+    </PackageReleaseNotes>
     <Authors>0use-TE</Authors>
     <Company>0use-TE</Company>
     <Description>Lightweight, Native AOT–friendly AI kernel with attribute-driven plugins, prompts, and filters.</Description>

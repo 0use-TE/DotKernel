@@ -34,6 +34,9 @@ public sealed class Kernel
     public void SetChatClient(IChatClient chatClient) =>
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
 
+    /// <summary>Current chat client used for model calls and optional plugin injection.</summary>
+    public IChatClient ChatClient => _chatClient;
+
     /// <summary>Read all [KernelProperty] values from registered plugin instances.</summary>
     public IReadOnlyDictionary<string, string?> GetPropertyContext()
     {

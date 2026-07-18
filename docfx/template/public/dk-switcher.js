@@ -6,12 +6,17 @@
   const rel = document.querySelector('meta[name="docfx:rel"]')?.content ?? '';
   const path = window.location.pathname;
 
+  /** Newest first — must match <option> values and docs/<version>/ folders. */
+  const versions = ['v1.0.1', 'v1.0'];
+  const defaultVersion = versions[0];
+
   const docPages = new Set([
     'getting-started',
     'plugins-and-prompts',
     'filters',
     'avalonia-demo',
     'aot-compatibility',
+    'release-notes',
     'introduction',
     'index',
   ]);
@@ -21,18 +26,23 @@
   }
 
   function currentVersion() {
-    return path.includes('/v1.0/') ? 'v1.0' : 'v1.0';
+    for (const v of versions) {
+      if (path.includes('/' + v + '/')) return v;
+    }
+    return defaultVersion;
   }
 
   function currentPage() {
-    const match = path.match(/\/docs\/v1\.0\/(?:zh-CN\/)?([^/]+)\.html/i);
+    const match = path.match(/\/docs\/v[\d.]+\/(?:zh-CN\/)?([^/]+)\.html/i);
     if (match && docPages.has(match[1])) return match[1];
     return 'getting-started';
   }
 
   function buildDocUrl(version, lang, page) {
-    if (version !== 'v1.0') return rel + 'index.html';
-    const prefix = lang === 'zh-CN' ? 'docs/v1.0/zh-CN/' : 'docs/v1.0/';
+    if (!versions.includes(version)) version = defaultVersion;
+    const prefix = lang === 'zh-CN'
+      ? `docs/${version}/zh-CN/`
+      : `docs/${version}/`;
     return rel + prefix + page + '.html';
   }
 
@@ -40,12 +50,7 @@
   langSelect.value = currentLang();
 
   versionSelect.addEventListener('change', () => {
-    const v = versionSelect.value;
-    if (v === 'v1.0') {
-      window.location.href = buildDocUrl(v, langSelect.value, currentPage());
-    } else {
-      versionSelect.value = currentVersion();
-    }
+    window.location.href = buildDocUrl(versionSelect.value, langSelect.value, currentPage());
   });
 
   langSelect.addEventListener('change', () => {

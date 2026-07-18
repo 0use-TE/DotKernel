@@ -26,6 +26,32 @@ public class KernelIntegrationTests
     }
 
     [Fact]
+    public async Task InvokeAsync_runs_sync_tool_without_cancellation_token()
+    {
+        var mock = new MockChatClient();
+        mock.Enqueue(new ChatResponse([
+            new ChatMessage(ChatRole.Assistant, [
+                new FunctionCallContent("call-1", "SimpleWeather_get_weather", new Dictionary<string, object?>
+                {
+                    ["city"] = "西雅图",
+                }),
+            ]),
+        ]));
+        mock.Enqueue(new ChatResponse(new ChatMessage(ChatRole.Assistant, "西雅图晴天。")));
+
+        var capturing = new ToolResultCapturingClient(mock);
+        var kernel = KernelBuilder.Create()
+            .AddChatClient(capturing)
+            .AddPlugin(new SimpleWeatherPlugin())
+            .Build();
+
+        var result = await kernel.InvokeAsync("西雅图天气怎么样？");
+
+        Assert.Equal("西雅图晴天。", result);
+        Assert.Equal("西雅图 晴天", Assert.Single(capturing.ToolResults));
+    }
+
+    [Fact]
     public async Task InvokeAsync_runs_tool_call_through_filter()
     {
         var mock = new MockChatClient();

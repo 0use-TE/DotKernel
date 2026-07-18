@@ -219,11 +219,16 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
                     !p.IsOptional && !p.HasExplicitDefaultValue))
                 .ToImmutableArray();
 
+            var callArguments = method.Parameters
+                .Select(GetCallArgumentExpression)
+                .ToImmutableArray();
+
             list.Add(new FunctionModel(
                 method.Name,
                 functionName,
                 description,
                 parameters,
+                callArguments,
                 method.IsStatic,
                 IsAsyncMethod(method),
                 GetReturnKind(method.ReturnType),
@@ -583,7 +588,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"        var {parameter.Name} = context.GetArgument<{MapClrType(parameter.JsonType)}>(\"{Escape(parameter.Name)}\");");
         }
 
-        var args = string.Join(", ", function.Parameters.Select(p => p.Name).Concat(["cancellationToken"]));
+        var args = string.Join(", ", function.CallArguments);
         var target = function.IsStatic ? model.FullyQualifiedType : $"context.GetPlugin<{model.FullyQualifiedType}>()";
 
         if (function.IsAsync)
@@ -666,6 +671,19 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             "Microsoft.Extensions.AI.IChatClient" => true,
             _ when parameter.Type.Name == "IServiceProvider" => true,
             _ => false,
+        };
+
+    /// <summary>Expression passed to the user method for this parameter (schema args or injected).</summary>
+    private static string GetCallArgumentExpression(IParameterSymbol parameter) =>
+        parameter.Type.ToDisplayString() switch
+        {
+            "System.Threading.CancellationToken" => "cancellationToken",
+            "DotKernel.Kernel" => "context.Kernel!",
+            "Microsoft.Extensions.AI.IChatClient" =>
+                "(context.Kernel ?? throw new global::DotKernel.KernelException(\"Kernel is required to inject IChatClient.\")).ChatClient",
+            _ when parameter.Type.Name == "IServiceProvider" =>
+                "throw new global::System.NotSupportedException(\"IServiceProvider injection is not supported yet.\")",
+            _ => parameter.Name,
         };
 
     private static bool IsAsyncMethod(IMethodSymbol method) =>
@@ -839,6 +857,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             string functionName,
             string? description,
             ImmutableArray<ParameterModel> parameters,
+            ImmutableArray<string> callArguments,
             bool isStatic,
             bool isAsync,
             ReturnKind returnKind,
@@ -848,6 +867,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             FunctionName = functionName;
             Description = description;
             Parameters = parameters;
+            CallArguments = callArguments;
             IsStatic = isStatic;
             IsAsync = isAsync;
             ReturnKind = returnKind;
@@ -858,6 +878,8 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         public string FunctionName { get; }
         public string? Description { get; }
         public ImmutableArray<ParameterModel> Parameters { get; }
+        /// <summary>C# expressions for each method parameter, in declaration order.</summary>
+        public ImmutableArray<string> CallArguments { get; }
         public bool IsStatic { get; }
         public bool IsAsync { get; }
         public ReturnKind ReturnKind { get; }

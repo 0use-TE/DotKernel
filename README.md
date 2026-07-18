@@ -26,11 +26,21 @@ dotnet run --project examples/DotKernel.AvaExample.Desktop
 
 Docs version: **v1.0** (NuGet package not published yet — reference the project).
 
-### Minimal kernel
+### Minimal kernel (OpenAI)
+
+```bash
+dotnet add package Microsoft.Extensions.AI.OpenAI
+# plus ProjectReference to DotKernel (or: dotnet add package DotKernel when published)
+```
 
 ```csharp
 using DotKernel;
 using Microsoft.Extensions.AI;
+using OpenAI;
+
+IChatClient chatClient = new OpenAIClient("sk-...")
+    .GetChatClient("gpt-4o-mini")
+    .AsIChatClient();
 
 var kernel = KernelBuilder.Create()
     .AddChatClient(chatClient)
@@ -39,6 +49,8 @@ var kernel = KernelBuilder.Create()
 
 var answer = await kernel.InvokeAsync("What's the weather in Seattle?");
 ```
+
+Full walkthrough: [Quick Start](https://0use.net/DotKernel/docs/v1.0/getting-started.html).
 
 ### Configure DeepSeek (optional)
 

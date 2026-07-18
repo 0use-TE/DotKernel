@@ -4,12 +4,20 @@ DotKernel is a lightweight AI kernel for .NET with attribute-driven plugins, pro
 
 Documentation version: **v1.0**.
 
-## Install
+## 1. Install DotKernel
 
 Reference the project in this repo (NuGet package coming later):
 
 ```xml
 <ProjectReference Include="..\..\src\DotKernel\DotKernel.csproj" />
+```
+
+Also add the source generator as an analyzer (required for `[KernelPlugin]` / `[KernelFunction]`):
+
+```xml
+<ProjectReference Include="..\..\src\DotKernel.Generators\DotKernel.Generators.csproj"
+                  OutputItemType="Analyzer"
+                  ReferenceOutputAssembly="false" />
 ```
 
 When published:
@@ -18,14 +26,45 @@ When published:
 dotnet add package DotKernel
 ```
 
-## Minimal kernel
+## 2. Create an `IChatClient` (OpenAI example)
+
+DotKernel talks to models through [`Microsoft.Extensions.AI`](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai)’s `IChatClient`. You bring the client; DotKernel does not ship a provider.
+
+For OpenAI (or any OpenAI-compatible endpoint), install:
+
+```bash
+dotnet add package Microsoft.Extensions.AI.OpenAI
+```
+
+Then build a client and pass it to `AddChatClient`:
+
+```csharp
+using System.ClientModel;
+using DotKernel;
+using Microsoft.Extensions.AI;
+using OpenAI;
+
+// Official OpenAI
+var openAi = new OpenAIClient("sk-...");
+IChatClient chatClient = openAi.GetChatClient("gpt-4o-mini").AsIChatClient();
+
+// Or any OpenAI-compatible API (DeepSeek, Azure OpenAI, local gateway, …)
+var compatible = new OpenAIClient(
+    new ApiKeyCredential("your-api-key"),
+    new OpenAIClientOptions { Endpoint = new Uri("https://api.deepseek.com") });
+IChatClient chatClient = compatible.GetChatClient("deepseek-chat").AsIChatClient();
+```
+
+Any other `IChatClient` works the same way (Azure, Ollama adapters, custom wrappers, etc.).
+
+## 3. Minimal kernel
 
 ```csharp
 using DotKernel;
 using Microsoft.Extensions.AI;
 
 var kernel = KernelBuilder.Create()
-    .AddChatClient(chatClient) // your IChatClient
+    .AddChatClient(chatClient)   // from step 2
     .AddPlugin(new WeatherPlugin())
     .Build();
 
@@ -33,7 +72,11 @@ var result = await kernel.InvokeAsync("What's the weather in Seattle?");
 Console.WriteLine(result);
 ```
 
-## Plugins with attributes
+`AddChatClient` is required — without it, `Build()` throws.
+
+## 4. Plugins with attributes
+
+Mark a `partial` class; the source generator emits static registration code.
 
 ```csharp
 [KernelPlugin("Weather")]
@@ -50,6 +93,38 @@ public partial class WeatherPlugin
 ```
 
 `[KernelProperty]` values are injected as live context on each model call. See [Plugins & Prompts](plugins-and-prompts.md).
+
+## Complete console sample
+
+```csharp
+using System.ClientModel;
+using DotKernel;
+using Microsoft.Extensions.AI;
+using OpenAI;
+
+var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+    ?? throw new InvalidOperationException("Set OPENAI_API_KEY.");
+
+IChatClient chatClient = new OpenAIClient(apiKey)
+    .GetChatClient("gpt-4o-mini")
+    .AsIChatClient();
+
+var kernel = KernelBuilder.Create()
+    .AddChatClient(chatClient)
+    .AddPlugin(new WeatherPlugin())
+    .Build();
+
+Console.WriteLine(await kernel.InvokeAsync("What's the weather in Seattle?"));
+
+[KernelPlugin("Weather")]
+public partial class WeatherPlugin
+{
+    [KernelFunction("get_weather")]
+    [KernelDescription("Get weather for a city")]
+    public string GetWeather([KernelDescription("City name")] string city)
+        => $"Sunny in {city}";
+}
+```
 
 ## Next steps
 

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -18,6 +19,38 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
     private const string KernelDescriptionAttribute = "DotKernel.KernelDescriptionAttribute";
     private const string KernelFilterAttribute = "DotKernel.KernelFilterAttribute";
     private const string KernelPropertyAttribute = "DotKernel.KernelPropertyAttribute";
+
+    private static readonly DiagnosticDescriptor PluginMustBePartial = new(
+        "DK001",
+        "Plugin must be partial",
+        "Class '{0}' marked with [KernelPlugin] must be declared partial",
+        "DotKernel",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor PromptClassMustBePartial = new(
+        "DK002",
+        "Prompt class must be partial",
+        "Class '{0}' marked with [KernelPromptClass] must be declared partial",
+        "DotKernel",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor FilterMustBePartial = new(
+        "DK003",
+        "Filter must be partial",
+        "Class '{0}' marked with [KernelFilter] must be declared partial",
+        "DotKernel",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor KernelFunctionNeedsPlugin = new(
+        "DK004",
+        "KernelFunction requires KernelPlugin",
+        "Method '{0}' is marked with [KernelFunction] but declaring type '{1}' is not marked with [KernelPlugin]",
+        "DotKernel",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -45,9 +78,38 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             .Where(static m => m is not null)
             .Select(static (m, _) => m!);
 
+        var orphanFunctions = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
+                KernelFunctionAttribute,
+                static (node, _) => node is MethodDeclarationSyntax,
+                static (ctx, _) => GetOrphanFunctionDiagnostic(ctx))
+            .Where(static m => m is not null)
+            .Select(static (m, _) => m!);
+
         context.RegisterSourceOutput(plugins, static (spc, model) => EmitPlugin(spc, model));
         context.RegisterSourceOutput(promptClasses, static (spc, model) => EmitPromptClass(spc, model));
         context.RegisterSourceOutput(filters, static (spc, model) => EmitFilter(spc, model));
+        context.RegisterSourceOutput(orphanFunctions, static (spc, model) =>
+            spc.ReportDiagnostic(Diagnostic.Create(KernelFunctionNeedsPlugin, model.Location, model.MethodName, model.TypeName)));
+    }
+
+    private static OrphanFunctionModel? GetOrphanFunctionDiagnostic(GeneratorAttributeSyntaxContext context)
+    {
+        if (context.TargetSymbol is not IMethodSymbol method ||
+            method.ContainingType is not INamedTypeSymbol typeSymbol)
+        {
+            return null;
+        }
+
+        if (typeSymbol.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == KernelPluginAttribute))
+        {
+            return null;
+        }
+
+        return new OrphanFunctionModel(
+            method.Name,
+            typeSymbol.Name,
+            context.TargetNode.GetLocation());
     }
 
     private static PluginModel? GetPluginModel(GeneratorAttributeSyntaxContext context)
@@ -77,7 +139,8 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             prompts,
             variables,
             contextProperties,
-            IsPartial(typeSymbol));
+            IsPartial(typeSymbol),
+            context.TargetNode.GetLocation());
     }
 
     private static PromptClassModel? GetPromptClassModel(GeneratorAttributeSyntaxContext context)
@@ -108,7 +171,8 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             pluginName,
             prompts,
             variables,
-            IsPartial(typeSymbol));
+            IsPartial(typeSymbol),
+            context.TargetNode.GetLocation());
     }
 
     private static FilterModel? GetFilterModel(GeneratorAttributeSyntaxContext context)
@@ -132,7 +196,8 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             typeSymbol.Name,
             GetNamespace(typeSymbol),
             priority,
-            IsPartial(typeSymbol));
+            IsPartial(typeSymbol),
+            context.TargetNode.GetLocation());
     }
 
     private static string? GetNamespace(INamedTypeSymbol typeSymbol)
@@ -215,8 +280,10 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
                 .Select(p => new ParameterModel(
                     p.Name,
                     MapJsonType(p.Type),
+                    p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                     GetDescription(p),
-                    !p.IsOptional && !p.HasExplicitDefaultValue))
+                    !p.IsOptional && !p.HasExplicitDefaultValue,
+                    FormatDefaultLiteral(p)))
                 .ToImmutableArray();
 
             var callArguments = method.Parameters
@@ -389,16 +456,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
     {
         if (!model.IsPartial)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "DK001",
-                    "Plugin must be partial",
-                    "Class '{0}' marked with [KernelPlugin] must be declared partial.",
-                    "DotKernel",
-                    DiagnosticSeverity.Error,
-                    isEnabledByDefault: true),
-                Location.None,
-                model.TypeName));
+            context.ReportDiagnostic(Diagnostic.Create(PluginMustBePartial, model.Location, model.TypeName));
             return;
         }
 
@@ -470,16 +528,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
     {
         if (!model.IsPartial)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "DK002",
-                    "Prompt class must be partial",
-                    "Class '{0}' marked with [KernelPromptClass] must be declared partial.",
-                    "DotKernel",
-                    DiagnosticSeverity.Error,
-                    isEnabledByDefault: true),
-                Location.None,
-                model.TypeName));
+            context.ReportDiagnostic(Diagnostic.Create(PromptClassMustBePartial, model.Location, model.TypeName));
             return;
         }
 
@@ -506,16 +555,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
     {
         if (!model.IsPartial)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "DK003",
-                    "Filter must be partial",
-                    "Class '{0}' marked with [KernelFilter] must be declared partial.",
-                    "DotKernel",
-                    DiagnosticSeverity.Error,
-                    isEnabledByDefault: true),
-                Location.None,
-                model.TypeName));
+            context.ReportDiagnostic(Diagnostic.Create(FilterMustBePartial, model.Location, model.TypeName));
             return;
         }
 
@@ -585,7 +625,14 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
 
         foreach (var parameter in function.Parameters)
         {
-            sb.AppendLine($"        var {parameter.Name} = context.GetArgument<{MapClrType(parameter.JsonType)}>(\"{Escape(parameter.Name)}\");");
+            if (parameter.Required)
+            {
+                sb.AppendLine($"        var {parameter.Name} = context.GetArgument<{parameter.ClrType}>(\"{Escape(parameter.Name)}\");");
+            }
+            else
+            {
+                sb.AppendLine($"        var {parameter.Name} = context.GetArgument<{parameter.ClrType}>(\"{Escape(parameter.Name)}\", {parameter.DefaultLiteral});");
+            }
         }
 
         var args = string.Join(", ", function.CallArguments);
@@ -669,7 +716,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             "System.Threading.CancellationToken" => true,
             "DotKernel.Kernel" => true,
             "Microsoft.Extensions.AI.IChatClient" => true,
-            _ when parameter.Type.Name == "IServiceProvider" => true,
+            "System.IServiceProvider" => true,
             _ => false,
         };
 
@@ -681,8 +728,9 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             "DotKernel.Kernel" => "context.Kernel!",
             "Microsoft.Extensions.AI.IChatClient" =>
                 "(context.Kernel ?? throw new global::DotKernel.KernelException(\"Kernel is required to inject IChatClient.\")).ChatClient",
-            _ when parameter.Type.Name == "IServiceProvider" =>
-                "throw new global::System.NotSupportedException(\"IServiceProvider injection is not supported yet.\")",
+            _ when parameter.Type.Name == "IServiceProvider" &&
+                   parameter.Type.ContainingNamespace?.ToDisplayString() == "System" =>
+                "(context.Kernel?.Services ?? throw new global::DotKernel.KernelException(\"IServiceProvider is not configured. Call UseServiceProvider on KernelBuilder.\"))",
             _ => parameter.Name,
         };
 
@@ -714,20 +762,88 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
 
     private static string MapJsonType(ITypeSymbol type)
     {
-        return type.ToDisplayString() switch
+        var underlying = type;
+        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable &&
+            nullable.TypeArguments.Length == 1)
         {
-            "int" or "long" or "short" or "byte" or "float" or "double" or "decimal" => "number",
-            "bool" => "boolean",
-            _ => "string",
+            underlying = nullable.TypeArguments[0];
+        }
+
+        if (underlying.TypeKind == TypeKind.Enum)
+        {
+            return "string";
+        }
+
+        if (underlying is IArrayTypeSymbol)
+        {
+            return "array";
+        }
+
+        if (underlying is INamedTypeSymbol named &&
+            named.SpecialType != SpecialType.System_String &&
+            (named.MetadataName is "List`1" or "IList`1" or "IReadOnlyList`1" or "ICollection`1" or "IEnumerable`1" ||
+             named.AllInterfaces.Any(i => i.OriginalDefinition.MetadataName == "IEnumerable`1")))
+        {
+            return "array";
+        }
+
+        return underlying.SpecialType switch
+        {
+            SpecialType.System_Boolean => "boolean",
+            SpecialType.System_Byte or SpecialType.System_SByte or SpecialType.System_Int16 or SpecialType.System_UInt16
+                or SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Int64 or SpecialType.System_UInt64
+                or SpecialType.System_Single or SpecialType.System_Double or SpecialType.System_Decimal => "number",
+            SpecialType.System_String or SpecialType.System_Char or SpecialType.System_DateTime => "string",
+            _ when underlying.ToDisplayString() is "System.Guid" or "System.DateTimeOffset" => "string",
+            _ when underlying.IsValueType => "string",
+            _ => "object",
         };
     }
 
-    private static string MapClrType(string jsonType) => jsonType switch
+    private static string FormatDefaultLiteral(IParameterSymbol parameter)
     {
-        "number" => "double",
-        "boolean" => "bool",
-        _ => "string",
-    };
+        var clrType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        if (!parameter.HasExplicitDefaultValue)
+        {
+            return $"default({clrType})";
+        }
+
+        var value = parameter.ExplicitDefaultValue;
+        if (value is null)
+        {
+            return "default!";
+        }
+
+        if (value is string s)
+        {
+            return $"\"{Escape(s)}\"";
+        }
+
+        if (value is bool b)
+        {
+            return b ? "true" : "false";
+        }
+
+        if (value is char c)
+        {
+            return $"'{Escape(c.ToString())}'";
+        }
+
+        var underlying = parameter.Type;
+        if (parameter.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable &&
+            nullable.TypeArguments.Length == 1)
+        {
+            underlying = nullable.TypeArguments[0];
+        }
+
+        if (underlying.TypeKind == TypeKind.Enum)
+        {
+            var enumType = underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return $"({enumType})({Convert.ToInt64(value, CultureInfo.InvariantCulture)})";
+        }
+
+        return Convert.ToString(value, CultureInfo.InvariantCulture) ?? $"default({clrType})";
+    }
 
     private static string? GetDescription(ISymbol symbol)
     {
@@ -765,6 +881,13 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         .Replace("\r", "\\r")
         .Replace("\n", "\\n");
 
+    private sealed class OrphanFunctionModel(string methodName, string typeName, Location location)
+    {
+        public string MethodName { get; } = methodName;
+        public string TypeName { get; } = typeName;
+        public Location Location { get; } = location;
+    }
+
     private sealed class PluginModel
     {
         public PluginModel(
@@ -776,7 +899,8 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             ImmutableArray<PromptModel> prompts,
             ImmutableArray<VariableModel> variables,
             ImmutableArray<ContextPropertyModel> contextProperties,
-            bool isPartial)
+            bool isPartial,
+            Location location)
         {
             FullyQualifiedType = fullyQualifiedType;
             ShortName = shortName;
@@ -787,6 +911,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             Variables = variables;
             ContextProperties = contextProperties;
             IsPartial = isPartial;
+            Location = location;
         }
 
         public string FullyQualifiedType { get; }
@@ -799,6 +924,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         public ImmutableArray<VariableModel> Variables { get; }
         public ImmutableArray<ContextPropertyModel> ContextProperties { get; }
         public bool IsPartial { get; }
+        public Location Location { get; }
     }
 
     private sealed class PromptClassModel
@@ -810,7 +936,8 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             string pluginName,
             ImmutableArray<PromptModel> prompts,
             ImmutableArray<VariableModel> variables,
-            bool isPartial)
+            bool isPartial,
+            Location location)
         {
             FullyQualifiedType = fullyQualifiedType;
             ShortName = shortName;
@@ -819,6 +946,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
             Prompts = prompts;
             Variables = variables;
             IsPartial = isPartial;
+            Location = location;
         }
 
         public string FullyQualifiedType { get; }
@@ -829,17 +957,25 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         public ImmutableArray<PromptModel> Prompts { get; }
         public ImmutableArray<VariableModel> Variables { get; }
         public bool IsPartial { get; }
+        public Location Location { get; }
     }
 
     private sealed class FilterModel
     {
-        public FilterModel(string fullyQualifiedType, string shortName, string? namespaceName, int priority, bool isPartial)
+        public FilterModel(
+            string fullyQualifiedType,
+            string shortName,
+            string? namespaceName,
+            int priority,
+            bool isPartial,
+            Location location)
         {
             FullyQualifiedType = fullyQualifiedType;
             ShortName = shortName;
             Namespace = namespaceName;
             Priority = priority;
             IsPartial = isPartial;
+            Location = location;
         }
 
         public string FullyQualifiedType { get; }
@@ -848,6 +984,7 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
         public string TypeName => ShortName;
         public int Priority { get; }
         public bool IsPartial { get; }
+        public Location Location { get; }
     }
 
     private sealed class FunctionModel
@@ -888,18 +1025,28 @@ public sealed class PluginSourceGenerator : IIncrementalGenerator
 
     private sealed class ParameterModel
     {
-        public ParameterModel(string name, string jsonType, string? description, bool required)
+        public ParameterModel(
+            string name,
+            string jsonType,
+            string clrType,
+            string? description,
+            bool required,
+            string defaultLiteral)
         {
             Name = name;
             JsonType = jsonType;
+            ClrType = clrType;
             Description = description;
             Required = required;
+            DefaultLiteral = defaultLiteral;
         }
 
         public string Name { get; }
         public string JsonType { get; }
+        public string ClrType { get; }
         public string? Description { get; }
         public bool Required { get; }
+        public string DefaultLiteral { get; }
     }
 
     private sealed class PromptModel

@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace DotKernel;
 
 public sealed class FunctionInvocationContext
@@ -12,6 +10,9 @@ public sealed class FunctionInvocationContext
 
     public Kernel? Kernel { get; init; }
 
+    public bool HasArgument(string name) =>
+        Arguments.TryGetValue(name, out var value) && value is not null;
+
     public T GetArgument<T>(string name)
     {
         if (!Arguments.TryGetValue(name, out var value) || value is null)
@@ -19,40 +20,17 @@ public sealed class FunctionInvocationContext
             throw new KernelException($"Missing required argument '{name}' for '{Descriptor.FullName}'.");
         }
 
-        if (value is T typed)
+        return ArgumentConverter.ConvertTo<T>(value, name, Descriptor.FullName);
+    }
+
+    public T GetArgument<T>(string name, T defaultValue)
+    {
+        if (!Arguments.TryGetValue(name, out var value) || value is null)
         {
-            return typed;
+            return defaultValue;
         }
 
-        if (value is string s && typeof(T) == typeof(string))
-        {
-            return (T)(object)s;
-        }
-
-        if (value is JsonElement json)
-        {
-            if (typeof(T) == typeof(string) && json.ValueKind == JsonValueKind.String)
-            {
-                return (T)(object)(json.GetString() ?? string.Empty);
-            }
-
-            if (typeof(T) == typeof(double) && json.ValueKind == JsonValueKind.Number)
-            {
-                return (T)(object)json.GetDouble();
-            }
-
-            if (typeof(T) == typeof(int) && json.ValueKind == JsonValueKind.Number)
-            {
-                return (T)(object)json.GetInt32();
-            }
-
-            if (typeof(T) == typeof(bool) && (json.ValueKind == JsonValueKind.True || json.ValueKind == JsonValueKind.False))
-            {
-                return (T)(object)json.GetBoolean();
-            }
-        }
-
-        return (T)Convert.ChangeType(value, typeof(T));
+        return ArgumentConverter.ConvertTo<T>(value, name, Descriptor.FullName);
     }
 
     public T GetPlugin<T>() where T : class

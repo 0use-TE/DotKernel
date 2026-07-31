@@ -10,9 +10,9 @@
 ```
 你在维护 DotKernel 的 DocFX 文档时，必须遵循：
 
-1. 版本切换：只用顶栏左侧 Version 下拉（不要在根 toc 放版本号链接）。根 toc.yml：Home | Docs（指向最新版）| API Reference | Live demo。默认最新版 v1.0.1。
+1. 版本切换：只用顶栏左侧 Version 下拉（不要在根 toc 放版本号链接）。根 toc.yml：Home | Docs（指向最新版）| API Reference | Live demo。默认最新版 v1.1.0。
 2. 语言切换：只用顶栏 navbar 的 Lang 下拉（English / 简体中文）。正文里不要写行内双语链接。
-3. 双语结构：docs/<version>/（英文）与 docs/<version>/zh-CN/（中文）镜像；文件名一一对应。当前版本目录：docs/v1.0.1/、docs/v1.0/。
+3. 双语结构：docs/<version>/（英文）与 docs/<version>/zh-CN/（中文）镜像；文件名一一对应。当前版本目录：docs/v1.1.0/、docs/v1.0.1/、docs/v1.0/。
 4. GitHub Pages 项目站：globalMetadata._appBasePath: "/DotKernel/"（线上：https://0use.net/DotKernel/）。
 5. docfx.json template：["default", "modern", "docfx/template"]；顶栏在 docfx/template/layout/_master.tmpl，脚本 docfx/template/public/dk-switcher.js（versions 数组须与文件夹名一致，最新在前）。
 6. introduction.md 用 redirect_url: getting-started.html。
@@ -36,14 +36,14 @@
 ├── docfx/template/
 │   ├── layout/_master.tmpl
 │   └── public/dk-switcher.{js,css}
-├── docs/v1.0.1/         # 当前文档（默认）
+├── docs/v1.1.0/         # 当前文档（默认）
 │   ├── toc.yml
 │   ├── getting-started.md
 │   ├── release-notes.md
 │   └── zh-CN/
+├── docs/v1.0.1/         # 历史文档
 ├── docs/v1.0/           # 历史文档（包 1.0.0）
-│   ├── toc.yml
-│   └── zh-CN/├── .github/workflows/docs.yml
+├── .github/workflows/docs.yml
 ├── api/                # .gitignore
 └── _site/              # .gitignore
 ```

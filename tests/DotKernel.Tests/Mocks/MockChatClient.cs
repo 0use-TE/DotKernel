@@ -8,6 +8,8 @@ internal sealed class MockChatClient : IChatClient
 
     public IList<ChatMessage>? LastRequestMessages { get; private set; }
 
+    public ChatOptions? LastRequestOptions { get; private set; }
+
     public void Enqueue(ChatResponse response) => _responses.Enqueue(response);
 
     public Task<ChatResponse> GetResponseAsync(
@@ -16,6 +18,7 @@ internal sealed class MockChatClient : IChatClient
         CancellationToken cancellationToken = default)
     {
         LastRequestMessages = messages as IList<ChatMessage> ?? messages.ToList();
+        LastRequestOptions = options;
 
         if (_responses.Count == 0)
         {

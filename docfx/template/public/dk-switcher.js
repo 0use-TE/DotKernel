@@ -7,7 +7,7 @@
   const path = window.location.pathname;
 
   /** Newest first — must match <option> values and docs/<version>/ folders. */
-  const versions = ['v1.0.1', 'v1.0'];
+  const versions = ['v1.1.0', 'v1.0.1', 'v1.0'];
   const defaultVersion = versions[0];
 
   const docPages = new Set([

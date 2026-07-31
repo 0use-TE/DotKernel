@@ -7,11 +7,15 @@ public sealed class Kernel
 {
     private IChatClient _chatClient;
     private readonly IReadOnlyDictionary<string, KernelFunctionDescriptor> _functionsByToolName;
+    private readonly IReadOnlyDictionary<string, KernelFunctionDescriptor> _functionsByFullName;
     private readonly IReadOnlyDictionary<string, PromptDefinition> _promptsByFullName;
+    private readonly IReadOnlyList<KernelFunctionDescriptor> _functions;
+    private readonly IReadOnlyList<PromptDefinition> _prompts;
     private readonly IReadOnlyList<KernelPropertyDescriptor> _properties;
     private readonly IReadOnlyDictionary<string, object?> _pluginInstances;
     private readonly FilterPipeline _filterPipeline;
     private readonly IList<AIFunction> _aiFunctions;
+    private readonly KernelInvokeOptions _defaults;
 
     internal Kernel(
         IChatClient chatClient,
@@ -19,16 +23,38 @@ public sealed class Kernel
         IReadOnlyList<PromptDefinition> prompts,
         IReadOnlyList<KernelPropertyDescriptor> properties,
         IReadOnlyDictionary<string, object?> pluginInstances,
-        IReadOnlyList<IKernelFilter> filters)
+        IReadOnlyList<IKernelFilter> filters,
+        IServiceProvider? services,
+        KernelInvokeOptions defaults)
     {
         _chatClient = chatClient;
+        _functions = functions;
+        _prompts = prompts;
         _functionsByToolName = functions.ToDictionary(f => f.ToolName, StringComparer.OrdinalIgnoreCase);
+        _functionsByFullName = functions.ToDictionary(f => f.FullName, StringComparer.OrdinalIgnoreCase);
         _promptsByFullName = prompts.ToDictionary(p => p.FullName, StringComparer.OrdinalIgnoreCase);
         _properties = properties;
         _pluginInstances = pluginInstances;
         _filterPipeline = new FilterPipeline(filters);
+        Services = services;
+        _defaults = defaults;
         _aiFunctions = functions.Select(f => (AIFunction)new KernelAIFunction(f)).ToList();
     }
+
+    /// <summary>Optional DI container for <c>IServiceProvider</c> injection into kernel functions.</summary>
+    public IServiceProvider? Services { get; }
+
+    /// <summary>Default invoke options (cloned at build time).</summary>
+    public KernelInvokeOptions Defaults => _defaults;
+
+    /// <summary>Registered tool functions.</summary>
+    public IReadOnlyList<KernelFunctionDescriptor> Functions => _functions;
+
+    /// <summary>Registered prompt templates.</summary>
+    public IReadOnlyList<PromptDefinition> Prompts => _prompts;
+
+    /// <summary>Registered live-context properties.</summary>
+    public IReadOnlyList<KernelPropertyDescriptor> Properties => _properties;
 
     /// <summary>Swap the underlying chat client (e.g. after the user changes API settings).</summary>
     public void SetChatClient(IChatClient chatClient) =>
@@ -108,6 +134,7 @@ public sealed class Kernel
         IReadOnlyDictionary<string, string?>? variables = null,
         object? instance = null,
         ChatHistory? history = null,
+        KernelInvokeOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         if (!_promptsByFullName.TryGetValue(fullName, out var prompt))
@@ -127,20 +154,58 @@ public sealed class Kernel
         };
 
         history.Add(new ChatMessage(role, rendered));
-        return await CompleteAsync(history, cancellationToken).ConfigureAwait(false);
+        return await CompleteAsync(history, ResolveOptions(options), cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Invoke a registered function by <c>Plugin.function</c> or tool name (<c>Plugin_function</c>),
+    /// without calling the language model. Runs the filter pipeline.
+    /// </summary>
+    public async Task<string> InvokeFunctionAsync(
+        string name,
+        IReadOnlyDictionary<string, object?>? arguments = null,
+        ChatHistory? history = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryResolveFunction(name, out var descriptor))
+        {
+            throw new KernelException($"Function '{name}' is not registered.");
+        }
+
+        var toolCall = new FunctionCallContent(
+            $"local-{Guid.NewGuid():N}",
+            descriptor.ToolName,
+            arguments is null ? null : new Dictionary<string, object?>(arguments));
+
+        history ??= new ChatHistory();
+        return await InvokeToolCallWithFiltersAsync(toolCall, history, cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task<string> InvokeAsync(
+        string input,
+        ChatHistory? history = null,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync(input, history, options: null, cancellationToken);
 
     public async Task<string> InvokeAsync(
         string input,
-        ChatHistory? history = null,
+        ChatHistory? history,
+        KernelInvokeOptions? options,
         CancellationToken cancellationToken = default)
     {
         history ??= new ChatHistory();
         history.AddUserMessage(input);
+        var resolved = ResolveOptions(options);
+        var rounds = 0;
 
         while (true)
         {
-            var response = await GetChatResponseAsync(history, cancellationToken).ConfigureAwait(false);
+            if (rounds++ >= resolved.MaxToolCallRounds)
+            {
+                throw new MaxToolCallRoundsExceededException(resolved.MaxToolCallRounds);
+            }
+
+            var response = await GetChatResponseAsync(history, resolved, cancellationToken).ConfigureAwait(false);
             var toolCalls = ExtractToolCalls(response);
 
             if (response.Text is { Length: > 0 } text && toolCalls.Count == 0)
@@ -165,21 +230,44 @@ public sealed class Kernel
         }
     }
 
-    public async IAsyncEnumerable<KernelStreamingUpdate> InvokeStreamingAsync(
+    public IAsyncEnumerable<KernelStreamingUpdate> InvokeStreamingAsync(
         string input,
         ChatHistory? history = null,
+        CancellationToken cancellationToken = default) =>
+        InvokeStreamingAsync(input, history, options: null, cancellationToken);
+
+    public async IAsyncEnumerable<KernelStreamingUpdate> InvokeStreamingAsync(
+        string input,
+        ChatHistory? history,
+        KernelInvokeOptions? options,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         history ??= new ChatHistory();
         history.AddUserMessage(input);
+        var resolved = ResolveOptions(options);
+        var rounds = 0;
 
         while (true)
         {
-            var options = new ChatOptions { Tools = [.. _aiFunctions] };
-            var updates = new List<ChatResponseUpdate>();
+            if (rounds++ >= resolved.MaxToolCallRounds)
+            {
+                throw new MaxToolCallRoundsExceededException(resolved.MaxToolCallRounds);
+            }
 
+            var chatOptions = CreateChatOptions(resolved);
+            var messages = BuildMessagesWithContext(history, resolved);
+            var modelContext = new ModelCallContext
+            {
+                History = history,
+                Messages = messages,
+                ChatOptions = chatOptions,
+            };
+
+            await _filterPipeline.InvokeBeforeModelCallAsync(modelContext, cancellationToken).ConfigureAwait(false);
+
+            var updates = new List<ChatResponseUpdate>();
             await foreach (var update in _chatClient
-                .GetStreamingResponseAsync(BuildMessagesWithContext(history), options, cancellationToken)
+                .GetStreamingResponseAsync(modelContext.Messages, modelContext.ChatOptions, cancellationToken)
                 .ConfigureAwait(false))
             {
                 updates.Add(update);
@@ -190,6 +278,10 @@ public sealed class Kernel
             }
 
             var response = updates.ToChatResponse();
+            modelContext.Response = response;
+            modelContext.StreamingFinalText = response.Text;
+            await _filterPipeline.InvokeAfterModelCallAsync(modelContext, cancellationToken).ConfigureAwait(false);
+
             var toolCalls = ExtractToolCalls(response);
 
             if (toolCalls.Count > 0)
@@ -224,26 +316,117 @@ public sealed class Kernel
         }
     }
 
-    private async Task<ChatResponse> GetChatResponseAsync(ChatHistory history, CancellationToken cancellationToken)
+    private KernelInvokeOptions ResolveOptions(KernelInvokeOptions? options)
     {
-        var options = new ChatOptions { Tools = [.. _aiFunctions] };
-        return await _chatClient
-            .GetResponseAsync(BuildMessagesWithContext(history), options, cancellationToken)
-            .ConfigureAwait(false);
+        if (options is null)
+        {
+            return _defaults;
+        }
+
+        if (options.MaxToolCallRounds < 1)
+        {
+            throw new KernelException("MaxToolCallRounds must be at least 1.");
+        }
+
+        return options;
     }
 
-    private IList<ChatMessage> BuildMessagesWithContext(ChatHistory history)
+    private async Task<ChatResponse> GetChatResponseAsync(
+        ChatHistory history,
+        KernelInvokeOptions options,
+        CancellationToken cancellationToken)
     {
-        var context = RenderPropertyContext();
-        if (string.IsNullOrWhiteSpace(context))
+        var chatOptions = CreateChatOptions(options);
+        var messages = BuildMessagesWithContext(history, options);
+        var modelContext = new ModelCallContext
+        {
+            History = history,
+            Messages = messages,
+            ChatOptions = chatOptions,
+        };
+
+        await _filterPipeline.InvokeBeforeModelCallAsync(modelContext, cancellationToken).ConfigureAwait(false);
+        var response = await _chatClient
+            .GetResponseAsync(modelContext.Messages, modelContext.ChatOptions, cancellationToken)
+            .ConfigureAwait(false);
+        modelContext.Response = response;
+        await _filterPipeline.InvokeAfterModelCallAsync(modelContext, cancellationToken).ConfigureAwait(false);
+        return response;
+    }
+
+    private ChatOptions CreateChatOptions(KernelInvokeOptions options)
+    {
+        var chatOptions = options.ChatOptions is null
+            ? new ChatOptions()
+            : CloneChatOptions(options.ChatOptions);
+
+        chatOptions.Tools = [.. _aiFunctions];
+        return chatOptions;
+    }
+
+    private static ChatOptions CloneChatOptions(ChatOptions source) => new()
+    {
+        AdditionalProperties = source.AdditionalProperties,
+        AllowMultipleToolCalls = source.AllowMultipleToolCalls,
+        ConversationId = source.ConversationId,
+        Instructions = source.Instructions,
+        MaxOutputTokens = source.MaxOutputTokens,
+        ModelId = source.ModelId,
+        RawRepresentationFactory = source.RawRepresentationFactory,
+        Temperature = source.Temperature,
+        TopP = source.TopP,
+        TopK = source.TopK,
+        Seed = source.Seed,
+        FrequencyPenalty = source.FrequencyPenalty,
+        PresencePenalty = source.PresencePenalty,
+        ResponseFormat = source.ResponseFormat,
+        StopSequences = source.StopSequences is null ? null : [.. source.StopSequences],
+        ToolMode = source.ToolMode,
+        Tools = source.Tools is null ? null : [.. source.Tools],
+    };
+
+    private IList<ChatMessage> BuildMessagesWithContext(ChatHistory history, KernelInvokeOptions options)
+    {
+        List<ChatMessage>? prefix = null;
+
+        if (options.IncludeSystemPrompts)
+        {
+            foreach (var prompt in _prompts)
+            {
+                if (prompt.Role != PromptRole.System)
+                {
+                    continue;
+                }
+
+                var instance = ResolveInstance(prompt.DeclaringType);
+                var text = PromptRenderer.Render(prompt, instance, extra: null);
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    continue;
+                }
+
+                prefix ??= [];
+                prefix.Add(new ChatMessage(ChatRole.System, text));
+            }
+        }
+
+        if (options.IncludePropertyContext)
+        {
+            var context = RenderPropertyContext();
+            if (!string.IsNullOrWhiteSpace(context))
+            {
+                prefix ??= [];
+                prefix.Add(new ChatMessage(ChatRole.System, context));
+            }
+        }
+
+        if (prefix is null || prefix.Count == 0)
         {
             return history.Messages is IList<ChatMessage> list ? list : history.Messages.ToList();
         }
 
-        var messages = new List<ChatMessage>(history.Messages.Count + 1)
-        {
-            new(ChatRole.System, context),
-        };
+        var messages = new List<ChatMessage>(prefix.Count + history.Messages.Count);
+        messages.AddRange(prefix);
         messages.AddRange(history.Messages);
         return messages;
     }
@@ -273,7 +456,8 @@ public sealed class Kernel
         CancellationToken cancellationToken)
     {
         var functionName = toolCall.Name ?? string.Empty;
-        if (!_functionsByToolName.TryGetValue(functionName, out var descriptor))
+        if (!_functionsByToolName.TryGetValue(functionName, out var descriptor) &&
+            !_functionsByFullName.TryGetValue(functionName, out descriptor))
         {
             return $"Error: unknown function '{functionName}'.";
         }
@@ -310,18 +494,34 @@ public sealed class Kernel
         };
 
         var raw = await descriptor.Invoker(invocation, cancellationToken).ConfigureAwait(false);
-        return raw?.ToString() ?? string.Empty;
+        return ToolResultFormatter.Format(raw);
     }
 
-    private async Task<string> CompleteAsync(ChatHistory history, CancellationToken cancellationToken)
+    private async Task<string> CompleteAsync(
+        ChatHistory history,
+        KernelInvokeOptions options,
+        CancellationToken cancellationToken)
     {
-        var response = await _chatClient
-            .GetResponseAsync(BuildMessagesWithContext(history), cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
-
+        var response = await GetChatResponseAsync(history, options, cancellationToken).ConfigureAwait(false);
         var text = response.Text ?? string.Empty;
         history.AddAssistantMessage(text);
         return text;
+    }
+
+    private bool TryResolveFunction(string name, out KernelFunctionDescriptor descriptor)
+    {
+        if (_functionsByFullName.TryGetValue(name, out descriptor!))
+        {
+            return true;
+        }
+
+        if (_functionsByToolName.TryGetValue(name, out descriptor!))
+        {
+            return true;
+        }
+
+        descriptor = null!;
+        return false;
     }
 
     private static List<FunctionCallContent> ExtractToolCalls(ChatResponse response)

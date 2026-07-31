@@ -13,7 +13,7 @@
     <IsPublishable>false</IsPublishable>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <NoWarn>$(NoWarn);RS1038;RS1041</NoWarn>
+    <NoWarn>$(NoWarn);RS1038;RS1041;RS2008</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

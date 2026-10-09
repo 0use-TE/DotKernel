@@ -9,8 +9,9 @@ Lightweight, **Native AOT–friendly** AI kernel for .NET. Register plugins, pro
 ## Features
 
 - Attribute-driven plugins (`[KernelPlugin]`, `[KernelFunction]`, `[KernelPrompt]`, `[KernelProperty]`)
-- Live context: marked properties injected into each model request
-- Tool-call filter pipeline with auto / manual approval
+- Live context + auto system-prompt injection on each model request
+- `KernelInvokeOptions` (ChatOptions, MaxToolCallRounds) and `InvokeFunctionAsync`
+- Tool-call + model-call filter hooks; `UseServiceProvider` for DI
 - Streaming via `InvokeStreamingAsync`
 - Source generator for trim-safe static registration
 - Avalonia cross-platform demo (Desktop + WebAssembly) with digital twin UI
@@ -24,16 +25,16 @@ dotnet test
 dotnet run --project examples/DotKernel.AvaExample.Desktop
 ```
 
-Docs version: **v1.0.1** · NuGet: **[DotKernel 1.0.1](https://www.nuget.org/packages/DotKernel/)**
+Docs version: **v1.1.0** · NuGet: **[DotKernel 1.1.0](https://www.nuget.org/packages/DotKernel/)**
 
 ### Install
 
 ```bash
-dotnet add package DotKernel --version 1.0.1
+dotnet add package DotKernel --version 1.1.0
 dotnet add package Microsoft.Extensions.AI.OpenAI
 ```
 
-> Use **1.0.1+** (1.0.0 could fail compiling sync `[KernelFunction]` methods without `CancellationToken`). See [release notes](docs/v1.0.1/release-notes.md).
+> Prefer **1.1.0**. See [release notes](docs/v1.1.0/release-notes.md).
 
 ### Minimal kernel (OpenAI)
 
@@ -54,7 +55,7 @@ var kernel = KernelBuilder.Create()
 var answer = await kernel.InvokeAsync("What's the weather in Seattle?");
 ```
 
-Full walkthrough: [Quick Start](https://0use.net/DotKernel/docs/v1.0.1/getting-started.html).
+Full walkthrough: [Quick Start](https://0use.net/DotKernel/docs/v1.1.0/getting-started.html).
 
 ### Configure DeepSeek (optional)
 
@@ -80,7 +81,7 @@ examples/
   DotKernel.AvaExample/     Shared Avalonia UI + twin plugin
   DotKernel.AvaExample.Desktop/
   DotKernel.AvaExample.Browser/
-docs/                       DocFX documentation (v1.0 + zh-CN)
+docs/                       DocFX documentation (versioned + zh-CN)
 ```
 
 ## Avalonia demo
@@ -137,9 +138,9 @@ GitHub Actions publishes docs + WASM demo to GitHub Pages on push to `main`. Set
 
 ```powershell
 dotnet pack src/DotKernel/DotKernel.csproj -c Release -o artifacts
-# packages: artifacts/DotKernel.1.0.1.nupkg (+ .snupkg)
+# packages: artifacts/DotKernel.1.1.0.nupkg (+ .snupkg)
 
-dotnet nuget push artifacts/DotKernel.1.0.1.nupkg --api-key <YOUR_KEY> --source https://api.nuget.org/v3/index.json
+dotnet nuget push artifacts/DotKernel.1.1.0.nupkg --api-key <YOUR_KEY> --source https://api.nuget.org/v3/index.json
 ```
 
 ## License

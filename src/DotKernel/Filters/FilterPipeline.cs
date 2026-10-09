@@ -18,4 +18,20 @@ internal sealed class FilterPipeline(IReadOnlyList<IKernelFilter> filters)
 
         return await pipeline(context, cancellationToken).ConfigureAwait(false);
     }
+
+    public async ValueTask InvokeBeforeModelCallAsync(ModelCallContext context, CancellationToken cancellationToken)
+    {
+        foreach (var filter in filters)
+        {
+            await filter.OnBeforeModelCallAsync(context, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public async ValueTask InvokeAfterModelCallAsync(ModelCallContext context, CancellationToken cancellationToken)
+    {
+        foreach (var filter in filters)
+        {
+            await filter.OnAfterModelCallAsync(context, cancellationToken).ConfigureAwait(false);
+        }
+    }
 }

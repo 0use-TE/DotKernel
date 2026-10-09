@@ -5,6 +5,8 @@ namespace DotKernel;
 public sealed class KernelBuilder : IKernelBuilder
 {
     private IChatClient? _chatClient;
+    private IServiceProvider? _services;
+    private readonly KernelInvokeOptions _defaults = new();
     private readonly List<KernelFunctionDescriptor> _functions = [];
     private readonly Dictionary<string, object?> _pluginInstances = new(StringComparer.Ordinal);
     private readonly List<PromptDefinition> _prompts = [];
@@ -16,6 +18,19 @@ public sealed class KernelBuilder : IKernelBuilder
     public IKernelBuilder AddChatClient(IChatClient chatClient)
     {
         _chatClient = chatClient;
+        return this;
+    }
+
+    public IKernelBuilder UseServiceProvider(IServiceProvider services)
+    {
+        _services = services ?? throw new ArgumentNullException(nameof(services));
+        return this;
+    }
+
+    public IKernelBuilder ConfigureDefaults(Action<KernelInvokeOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        configure(_defaults);
         return this;
     }
 
@@ -59,6 +74,19 @@ public sealed class KernelBuilder : IKernelBuilder
             throw new KernelException("A chat client must be configured via AddChatClient.");
         }
 
-        return new Kernel(_chatClient, _functions, _prompts, _properties, _pluginInstances, _filters);
+        if (_defaults.MaxToolCallRounds < 1)
+        {
+            throw new KernelException("MaxToolCallRounds must be at least 1.");
+        }
+
+        return new Kernel(
+            _chatClient,
+            _functions,
+            _prompts,
+            _properties,
+            _pluginInstances,
+            _filters,
+            _services,
+            _defaults.Clone());
     }
 }
